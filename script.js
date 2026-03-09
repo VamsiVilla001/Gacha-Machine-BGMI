@@ -226,6 +226,10 @@ function showResult(number, color) {
     sidebarResultNumber.classList.remove("is-pending");
 }
 
+function clearResult() {
+    setPendingResult();
+}
+
 function sampleAirflowField(ball, now, blowerStrength) {
     const relX = (ball.x - CONTAINER_CX) / CONTAINER_RADIUS;
     const relY = (ball.y - CONTAINER_CY) / CONTAINER_RADIUS;
@@ -446,14 +450,15 @@ function launchBallsIntoAirflow(now) {
     }
 }
 
-function startCycle(now = performance.now()) {
+function startCycle(now = performance.now(), forcedNumber = null) {
     if (broadcastState.running || balls.length === 0) {
         return;
     }
 
     broadcastState.running = true;
     broadcastState.startTime = now;
-    broadcastState.selectedNumber = resolveSelectedNumber();
+    broadcastState.selectedNumber =
+        typeof forcedNumber === "number" ? forcedNumber : resolveSelectedNumber();
     broadcastState.selectedColor = getRandomResultBallColor();
 
     knobGroup.classList.add("knob-active");
@@ -504,13 +509,19 @@ function handleSocketMessage(event) {
             resultBall.classList.contains("is-pending")
         ) {
             showResult(message.state.lastResult, broadcastState.selectedColor);
+        } else if (message.state?.lastResult == null && !broadcastState.running) {
+            clearResult();
         }
         return;
     }
 
     if (message.type === "knob_command") {
+        if (message.config) {
+            applyConfig(message.config);
+        }
+
         if (message.action === "start") {
-            startCycle();
+            startCycle(performance.now(), message.selectedNumber);
         } else if (message.action === "stop") {
             stopCycle(true);
         } else if (message.action === "toggle") {

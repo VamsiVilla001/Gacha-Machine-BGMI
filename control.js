@@ -6,9 +6,11 @@ const minNumberInput = document.getElementById("min-number-input");
 const maxNumberInput = document.getElementById("max-number-input");
 const scriptedNumberInput = document.getElementById("scripted-number-input");
 const knobToggleButton = document.getElementById("knob-toggle-button");
+const resetHistoryButton = document.getElementById("reset-history-button");
 const controlHint = document.getElementById("control-hint");
 const lastResultNumber = document.getElementById("last-result-number");
 const resultModeCaption = document.getElementById("result-mode-caption");
+const pickHistoryList = document.getElementById("pick-history-list");
 const resolutionButtons = Array.from(document.querySelectorAll("[data-resolution-option]"));
 const selectionModeButtons = Array.from(document.querySelectorAll("[data-selection-mode]"));
 
@@ -22,7 +24,8 @@ const controlState = {
         scriptedNumber: 777
     },
     machineRunning: false,
-    lastResult: null
+    lastResult: null,
+    pickedNumbers: []
 };
 
 function clamp(value, min, max) {
@@ -108,6 +111,24 @@ function updateResultUI() {
     resultModeCaption.textContent = "Waiting for the next run.";
 }
 
+function updateHistoryUI() {
+    pickHistoryList.innerHTML = "";
+
+    if (controlState.pickedNumbers.length === 0) {
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "history-empty";
+        emptyItem.textContent = "No picks yet.";
+        pickHistoryList.appendChild(emptyItem);
+        return;
+    }
+
+    controlState.pickedNumbers.forEach((value) => {
+        const item = document.createElement("li");
+        item.textContent = String(value).padStart(3, "0");
+        pickHistoryList.appendChild(item);
+    });
+}
+
 function applyState(state) {
     if (state.config) {
         controlState.config = normalizeConfig(state.config);
@@ -118,6 +139,9 @@ function applyState(state) {
     controlState.machineRunning = Boolean(state.machineRunning);
     controlState.lastResult =
         typeof state.lastResult === "number" ? state.lastResult : controlState.lastResult;
+    controlState.pickedNumbers = Array.isArray(state.pickedNumbers)
+        ? state.pickedNumbers.slice()
+        : controlState.pickedNumbers;
 
     minNumberInput.value = String(controlState.config.minNumber);
     maxNumberInput.value = String(controlState.config.maxNumber);
@@ -127,6 +151,7 @@ function applyState(state) {
     updateResolutionUI();
     updateStatusUI();
     updateResultUI();
+    updateHistoryUI();
 }
 
 function handleSocketMessage(event) {
@@ -139,6 +164,11 @@ function handleSocketMessage(event) {
 
     if (message.type === "state_snapshot" || message.type === "config_update") {
         applyState(message.state || message.config || {});
+        return;
+    }
+
+    if (message.type === "command_rejected") {
+        resultModeCaption.textContent = message.reason || "Command rejected.";
     }
 }
 
@@ -221,15 +251,21 @@ function bindControls() {
 
         sendMessage({
             type: "knob_command",
-            action: controlState.machineRunning ? "stop" : "start"
+            action: controlState.machineRunning ? "stop" : "start",
+            config: controlState.config
         });
+    });
+
+    resetHistoryButton.addEventListener("click", () => {
+        sendMessage({ type: "reset_history" });
     });
 }
 
 applyState({
     config: controlState.config,
     machineRunning: false,
-    lastResult: null
+    lastResult: null,
+    pickedNumbers: []
 });
 bindControls();
 connectSocket();

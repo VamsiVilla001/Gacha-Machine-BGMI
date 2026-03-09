@@ -172,6 +172,11 @@ h1 {
     text-align: center;
 }
 
+.panel-card-history {
+    display: flex;
+    flex-direction: column;
+}
+
 #last-result-number {
     color: #111111;
     font-size: 88px;
@@ -192,6 +197,27 @@ h1 {
     line-height: 1.5;
 }
 
+#pick-history-list {
+    margin: 0;
+    padding-left: 24px;
+    color: #231f20;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.6;
+    max-height: 240px;
+    overflow: auto;
+}
+
+#pick-history-list li {
+    font-variant-numeric: tabular-nums;
+}
+
+.history-empty {
+    color: #7a7d87;
+    font-size: 16px;
+    font-weight: 700;
+}
+
 .panel-card-action {
     display: flex;
     flex-direction: column;
@@ -208,6 +234,24 @@ h1 {
 .knob-toggle-button.is-running {
     background: linear-gradient(180deg, #48576a 0%, #28313c 100%);
     box-shadow: 0 18px 26px rgba(40, 49, 60, 0.22);
+}
+
+.secondary-action-button {
+    appearance: none;
+    border: 0;
+    border-radius: 16px;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, #59687b 0%, #36414e 100%);
+    color: #f0f5fb;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 14px 24px rgba(54, 65, 78, 0.24);
+    transition: transform 0.18s ease;
+}
+
+.secondary-action-button:hover {
+    transform: translateY(-1px);
 }
 
 @media (max-width: 760px) {

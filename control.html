@@ -59,10 +59,18 @@
                 <div id="last-result-number">---</div>
                 <p id="result-mode-caption">Waiting for the next run.</p>
             </section>
+
+            <section class="panel-card panel-card-history">
+                <h2>Picked Numbers</h2>
+                <ol id="pick-history-list">
+                    <li class="history-empty">No picks yet.</li>
+                </ol>
+            </section>
         </section>
 
         <section class="panel-card panel-card-action">
             <button type="button" id="knob-toggle-button" class="knob-toggle-button">Knob On</button>
+            <button type="button" id="reset-history-button" class="secondary-action-button">Reset Picks</button>
             <p id="control-hint">Random mode uses the configured range. Scripted mode forces the exact value entered.</p>
         </section>
     </main>

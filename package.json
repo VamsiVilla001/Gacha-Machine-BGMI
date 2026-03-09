@@ -1,0 +1,24 @@
+{
+  "name": "gacha",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VamsiVilla001/Gacha-Machine-BGMI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VamsiVilla001/Gacha-Machine-BGMI/issues"
+  },
+  "homepage": "https://github.com/VamsiVilla001/Gacha-Machine-BGMI#readme",
+  "description": "",
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
+}

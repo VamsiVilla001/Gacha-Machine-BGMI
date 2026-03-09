@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gacha Control Panel</title>
+    <link rel="stylesheet" href="control.css">
+</head>
+<body>
+    <main id="control-shell">
+        <section class="control-header">
+            <div>
+                <p class="eyebrow">Control Module</p>
+                <h1>Gacha Machine Control Panel</h1>
+            </div>
+            <div class="status-stack">
+                <div class="status-chip" id="connection-status">Connecting</div>
+                <div class="status-chip status-chip-dark" id="machine-status">Idle</div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <section class="panel-card">
+                <h2>Broadcast Resolution</h2>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-button is-active" data-resolution-option="1920x1080">1920 x 1080</button>
+                    <button type="button" class="toggle-button" data-resolution-option="3840x2160">3840 x 2160</button>
+                </div>
+            </section>
+
+            <section class="panel-card">
+                <h2>Random Range</h2>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Min</span>
+                        <input id="min-number-input" type="number" min="0" max="999" step="1" value="0">
+                    </label>
+                    <label class="field">
+                        <span>Max</span>
+                        <input id="max-number-input" type="number" min="0" max="999" step="1" value="999">
+                    </label>
+                </div>
+            </section>
+
+            <section class="panel-card">
+                <h2>Selection Mode</h2>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-button is-active" data-selection-mode="random">Random</button>
+                    <button type="button" class="toggle-button" data-selection-mode="scripted">Scripted</button>
+                </div>
+                <label class="field field-stacked">
+                    <span>Scripted Number</span>
+                    <input id="scripted-number-input" type="number" min="0" max="999" step="1" value="777" disabled>
+                </label>
+            </section>
+
+            <section class="panel-card panel-card-result">
+                <h2>Live Result</h2>
+                <div id="last-result-number">---</div>
+                <p id="result-mode-caption">Waiting for the next run.</p>
+            </section>
+        </section>
+
+        <section class="panel-card panel-card-action">
+            <button type="button" id="knob-toggle-button" class="knob-toggle-button">Knob On</button>
+            <p id="control-hint">Random mode uses the configured range. Scripted mode forces the exact value entered.</p>
+        </section>
+    </main>
+
+    <script src="control.js"></script>
+</body>
+</html>

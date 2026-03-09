@@ -1,9 +1,14 @@
 /**
- * Gacha machine physics and result display.
+ * Broadcast page runtime.
+ * Runs the machine animation and reacts to live control commands over WebSocket.
  */
+
+const WS_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?role=broadcast`;
 
 const container = document.getElementById("balls-container");
 const knobGroup = document.getElementById("knob-group");
+const broadcastCanvas = document.getElementById("broadcast-canvas");
+const resolutionReadout = document.getElementById("resolution-readout");
 const resultBall = document.getElementById("result-ball");
 const resultBallColor = document.getElementById("result-ball-color");
 const resultBallNumber = document.getElementById("result-ball-number");
@@ -29,14 +34,6 @@ const SPIN_UP_MS = 900;
 const MIX_MS = 3000;
 const SPIN_DOWN_MS = 900;
 const TOTAL_CYCLE_MS = SPIN_UP_MS + MIX_MS + SPIN_DOWN_MS;
-
-const balls = [];
-const machineState = {
-    running: false,
-    startTime: 0,
-    selectedBall: null
-};
-
 const RESULT_BALL_COLORS = [
     "#d32f2f",
     "#ed9d0f",
@@ -48,6 +45,23 @@ const RESULT_BALL_COLORS = [
     "#ef4a43"
 ];
 
+const balls = [];
+const broadcastState = {
+    socket: null,
+    connected: false,
+    running: false,
+    startTime: 0,
+    config: {
+        resolution: "1920x1080",
+        minNumber: 0,
+        maxNumber: 999,
+        selectionMode: "random",
+        scriptedNumber: 777
+    },
+    selectedNumber: null,
+    selectedColor: "#9aa2af"
+};
+
 class Ball {
     constructor(gElement, x, y, radius, number) {
         this.x = x;
@@ -56,15 +70,14 @@ class Ball {
         this.initialY = y;
         this.radius = radius;
         this.number = number;
-
         this.vx = 0;
         this.vy = 0;
         this.angle = 0;
         this.angularVelocity = 0;
         this.flowPhase = Math.random() * Math.PI * 10;
         this.flowBias = (Math.random() - 0.5) * 0.6;
-
         this.g = gElement;
+
         this.updateTransform();
     }
 
@@ -85,7 +98,6 @@ class Ball {
             const airflow = sampleAirflowField(this, now, effectiveStrength);
             const coupling = 0.16 * blowerStrength;
 
-            // Lightweight balls are quickly accelerated toward the local air velocity.
             this.vx += (airflow.vx - this.vx) * coupling;
             this.vy += (airflow.vy - this.vy) * coupling;
             this.angularVelocity += airflow.spin;
@@ -161,6 +173,59 @@ function easeInOutSine(value) {
     return -(Math.cos(Math.PI * value) - 1) / 2;
 }
 
+function normalizeConfig(config) {
+    const minNumber = clamp(Number.parseInt(config.minNumber ?? 0, 10) || 0, 0, 999);
+    const maxNumber = clamp(Number.parseInt(config.maxNumber ?? 999, 10) || 999, 0, 999);
+    const scriptedNumber = clamp(
+        Number.parseInt(config.scriptedNumber ?? 777, 10) || 777,
+        0,
+        999
+    );
+
+    return {
+        resolution: config.resolution === "3840x2160" ? "3840x2160" : "1920x1080",
+        minNumber: Math.min(minNumber, maxNumber),
+        maxNumber: Math.max(minNumber, maxNumber),
+        selectionMode: config.selectionMode === "scripted" ? "scripted" : "random",
+        scriptedNumber
+    };
+}
+
+function applyConfig(config) {
+    broadcastState.config = normalizeConfig(config);
+    resolutionReadout.textContent =
+        broadcastState.config.resolution === "3840x2160" ? "3840 x 2160" : "1920 x 1080";
+    broadcastCanvas.dataset.resolution = broadcastState.config.resolution;
+}
+
+function formatBallNumber(value) {
+    return String(value).padStart(3, "0");
+}
+
+function getRandomResultBallColor() {
+    return RESULT_BALL_COLORS[Math.floor(Math.random() * RESULT_BALL_COLORS.length)];
+}
+
+function setPendingResult() {
+    resultBallNumber.textContent = "---";
+    sidebarResultNumber.textContent = "---";
+    resultBallColor.style.fill = "#9aa2af";
+    resultBall.classList.add("is-pending");
+    sidebarResultNumber.classList.add("is-pending");
+}
+
+function showResult(number, color) {
+    if (typeof number !== "number") {
+        return;
+    }
+
+    resultBallNumber.textContent = formatBallNumber(number);
+    sidebarResultNumber.textContent = formatBallNumber(number);
+    resultBallColor.style.fill = color;
+    resultBall.classList.remove("is-pending");
+    sidebarResultNumber.classList.remove("is-pending");
+}
+
 function sampleAirflowField(ball, now, blowerStrength) {
     const relX = (ball.x - CONTAINER_CX) / CONTAINER_RADIUS;
     const relY = (ball.y - CONTAINER_CY) / CONTAINER_RADIUS;
@@ -227,11 +292,11 @@ function sampleAirflowField(ball, now, blowerStrength) {
 }
 
 function getBlowerStrength(now) {
-    if (!machineState.running) {
+    if (!broadcastState.running) {
         return 0;
     }
 
-    const elapsed = now - machineState.startTime;
+    const elapsed = now - broadcastState.startTime;
     if (elapsed >= TOTAL_CYCLE_MS) {
         return 0;
     }
@@ -287,7 +352,6 @@ function checkBallCollisions() {
                     b2.vx += impulse * nx;
                     b2.vy += impulse * ny;
 
-                    // Keep enough sideways energy for airborne mixing while damping jitter.
                     b1.vx -= tangentVelocity * tangentX * 0.018;
                     b1.vy -= tangentVelocity * tangentY * 0.018;
                     b2.vx += tangentVelocity * tangentX * 0.018;
@@ -300,44 +364,6 @@ function checkBallCollisions() {
             }
         }
     }
-}
-
-function generateUniqueNumbers(count, min, max) {
-    const numbers = new Set();
-    while (numbers.size < count) {
-        numbers.add(Math.floor(Math.random() * (max - min + 1)) + min);
-    }
-    return Array.from(numbers);
-}
-
-function formatBallNumber(value) {
-    return String(value).padStart(3, "0");
-}
-
-function getRandomResultBallColor() {
-    return RESULT_BALL_COLORS[Math.floor(Math.random() * RESULT_BALL_COLORS.length)];
-}
-
-function setPendingResult() {
-    resultBallNumber.textContent = "---";
-    sidebarResultNumber.textContent = "---";
-    resultBallColor.style.fill = "#9aa2af";
-    resultBall.classList.add("is-pending");
-    sidebarResultNumber.classList.add("is-pending");
-}
-
-function showResult(ball) {
-    if (!ball) {
-        return;
-    }
-
-    const resultColor = getRandomResultBallColor();
-
-    resultBallNumber.textContent = formatBallNumber(ball.number);
-    sidebarResultNumber.textContent = formatBallNumber(ball.number);
-    resultBallColor.style.fill = resultColor;
-    resultBall.classList.remove("is-pending");
-    sidebarResultNumber.classList.remove("is-pending");
 }
 
 function initBalls() {
@@ -357,7 +383,11 @@ function initBalls() {
         allBallElements.push(clone);
     }
 
-    const numbers = generateUniqueNumbers(allBallElements.length, 0, 999);
+    const uniqueNumbers = new Set();
+    while (uniqueNumbers.size < allBallElements.length) {
+        uniqueNumbers.add(Math.floor(Math.random() * 1000));
+    }
+    const numbers = Array.from(uniqueNumbers);
 
     allBallElements.forEach((g, index) => {
         container.appendChild(g);
@@ -376,14 +406,138 @@ function initBalls() {
     });
 }
 
-function finishCycle() {
-    if (!machineState.running) {
+function sendMessage(message) {
+    if (!broadcastState.socket || broadcastState.socket.readyState !== WebSocket.OPEN) {
         return;
     }
 
-    machineState.running = false;
+    broadcastState.socket.send(JSON.stringify(message));
+}
+
+function sendStatus() {
+    sendMessage({
+        type: "broadcast_status",
+        machineRunning: broadcastState.running
+    });
+}
+
+function sendResult(number) {
+    sendMessage({
+        type: "broadcast_result",
+        resultNumber: number
+    });
+}
+
+function resolveSelectedNumber() {
+    if (broadcastState.config.selectionMode === "scripted") {
+        return broadcastState.config.scriptedNumber;
+    }
+
+    const { minNumber, maxNumber } = broadcastState.config;
+    return Math.floor(Math.random() * (maxNumber - minNumber + 1)) + minNumber;
+}
+
+function launchBallsIntoAirflow(now) {
+    for (const ball of balls) {
+        const airflow = sampleAirflowField(ball, now, BLOWER_FORCE_MULTIPLIER);
+        ball.vx += airflow.vx * 0.45;
+        ball.vy += airflow.vy * 0.45;
+        ball.angularVelocity += airflow.spin * 6;
+    }
+}
+
+function startCycle(now = performance.now()) {
+    if (broadcastState.running || balls.length === 0) {
+        return;
+    }
+
+    broadcastState.running = true;
+    broadcastState.startTime = now;
+    broadcastState.selectedNumber = resolveSelectedNumber();
+    broadcastState.selectedColor = getRandomResultBallColor();
+
+    knobGroup.classList.add("knob-active");
+    setPendingResult();
+    launchBallsIntoAirflow(now);
+    sendStatus();
+}
+
+function stopCycle(revealResult = true) {
+    if (!broadcastState.running && !revealResult) {
+        return;
+    }
+
+    const selectedNumber = broadcastState.selectedNumber;
+    const selectedColor = broadcastState.selectedColor;
+
+    broadcastState.running = false;
     knobGroup.classList.remove("knob-active");
-    showResult(machineState.selectedBall);
+
+    if (revealResult && typeof selectedNumber === "number") {
+        showResult(selectedNumber, selectedColor);
+        sendResult(selectedNumber);
+    }
+
+    sendStatus();
+}
+
+function handleSocketMessage(event) {
+    let message;
+    try {
+        message = JSON.parse(event.data);
+    } catch {
+        return;
+    }
+
+    if (message.type === "state_snapshot" || message.type === "config_update") {
+        const nextConfig =
+            message.state?.config ||
+            message.config?.config ||
+            message.config ||
+            {};
+
+        applyConfig(nextConfig);
+
+        if (
+            typeof message.state?.lastResult === "number" &&
+            !broadcastState.running &&
+            resultBall.classList.contains("is-pending")
+        ) {
+            showResult(message.state.lastResult, broadcastState.selectedColor);
+        }
+        return;
+    }
+
+    if (message.type === "knob_command") {
+        if (message.action === "start") {
+            startCycle();
+        } else if (message.action === "stop") {
+            stopCycle(true);
+        } else if (message.action === "toggle") {
+            if (broadcastState.running) {
+                stopCycle(true);
+            } else {
+                startCycle();
+            }
+        }
+    }
+}
+
+function connectSocket() {
+    const socket = new WebSocket(WS_URL);
+    broadcastState.socket = socket;
+
+    socket.addEventListener("open", () => {
+        broadcastState.connected = true;
+        sendStatus();
+    });
+
+    socket.addEventListener("message", handleSocketMessage);
+
+    socket.addEventListener("close", () => {
+        broadcastState.connected = false;
+        window.setTimeout(connectSocket, 1000);
+    });
 }
 
 function animate(now) {
@@ -404,38 +558,15 @@ function animate(now) {
         ball.updateTransform();
     }
 
-    if (machineState.running && now - machineState.startTime >= TOTAL_CYCLE_MS) {
-        finishCycle();
+    if (broadcastState.running && now - broadcastState.startTime >= TOTAL_CYCLE_MS) {
+        stopCycle(true);
     }
 
     requestAnimationFrame(animate);
 }
 
-function startCycle(now) {
-    if (machineState.running || balls.length === 0) {
-        return;
-    }
-
-    machineState.running = true;
-    machineState.startTime = now;
-    machineState.selectedBall = balls[Math.floor(Math.random() * balls.length)];
-
-    // Launch the balls into the circulation loop immediately on click.
-    for (const ball of balls) {
-        const airflow = sampleAirflowField(ball, now, BLOWER_FORCE_MULTIPLIER);
-        ball.vx += airflow.vx * 0.45;
-        ball.vy += airflow.vy * 0.45;
-        ball.angularVelocity += airflow.spin * 6;
-    }
-
-    knobGroup.classList.add("knob-active");
-    setPendingResult();
-}
-
-knobGroup.addEventListener("click", () => {
-    startCycle(performance.now());
-});
-
 initBalls();
+applyConfig(broadcastState.config);
 setPendingResult();
+connectSocket();
 requestAnimationFrame(animate);

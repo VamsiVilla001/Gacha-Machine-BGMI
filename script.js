@@ -42,11 +42,18 @@ const resultBall = document.getElementById("result-ball");
 const resultBallColor = document.getElementById("result-ball-color");
 const resultBallNumber = document.getElementById("result-ball-number");
 const sidebarResultNumber = document.getElementById("sidebar-result-number");
-const sidebarResultBallColor = document.getElementById("sidebar-result-ball-color");
+const sidebarResultAccent = document.getElementById("sidebar-result-accent");
+const broadcastBrandTitle = document.querySelector(".broadcast-brand-title");
 
-const CONTAINER_CX = 366.3;
-const CONTAINER_CY = 375.6;
-const CONTAINER_RADIUS = 300;
+const CONTAINER_BOUNDS = Object.freeze({
+    x: 38.35,
+    y: 47.68,
+    width: 655.9,
+    height: 655.9
+});
+const CONTAINER_CX = CONTAINER_BOUNDS.x + CONTAINER_BOUNDS.width / 2;
+const CONTAINER_CY = CONTAINER_BOUNDS.y + CONTAINER_BOUNDS.height / 2;
+const CONTAINER_RADIUS = CONTAINER_BOUNDS.width / 2 - 38;
 const NOZZLE_X = CONTAINER_CX;
 const NOZZLE_Y = CONTAINER_CY + CONTAINER_RADIUS - 18;
 
@@ -248,14 +255,17 @@ function setPendingResult() {
     if (resultBallColor) {
         resultBallColor.style.fill = "#9aa2af";
     }
-    if (sidebarResultBallColor) {
-        sidebarResultBallColor.style.fill = "#9aa2af";
+    if (sidebarResultAccent) {
+        sidebarResultAccent.style.setProperty("--ticket-accent", "#9aa2af");
     }
     if (resultBall) {
         resultBall.classList.add("is-pending");
     }
     if (sidebarResultNumber) {
         sidebarResultNumber.classList.add("is-pending");
+    }
+    if (broadcastBrandTitle) {
+        broadcastBrandTitle.classList.remove("is-result");
     }
 }
 
@@ -273,14 +283,17 @@ function showResult(number, color) {
     if (resultBallColor) {
         resultBallColor.style.fill = color;
     }
-    if (sidebarResultBallColor) {
-        sidebarResultBallColor.style.fill = color;
+    if (sidebarResultAccent) {
+        sidebarResultAccent.style.setProperty("--ticket-accent", color);
     }
     if (resultBall) {
         resultBall.classList.remove("is-pending");
     }
     if (sidebarResultNumber) {
         sidebarResultNumber.classList.remove("is-pending");
+    }
+    if (broadcastBrandTitle) {
+        broadcastBrandTitle.classList.add("is-result");
     }
 }
 

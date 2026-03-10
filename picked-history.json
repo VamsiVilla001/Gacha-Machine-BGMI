@@ -74,6 +74,28 @@
         885,
         205
       ]
+    },
+    "7c724606-7528-4a78-8b1e-5b717a1ff826": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": null,
+      "pickedNumbers": []
+    },
+    "122d7bb9-f24b-49e0-ad29-6afef4a0ba2a": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 77
+      },
+      "lastResult": null,
+      "pickedNumbers": []
     }
   }
 }

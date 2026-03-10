@@ -20,27 +20,54 @@
         <section id="broadcast-module">
             <div id="broadcast-canvas" data-resolution="1920x1080">
                 <div id="broadcast-content">
-                    <div id="app">
+                    <div class="broadcast-rail broadcast-rail-left" aria-hidden="true">
+                        <img src="figma-assets/05b44370ef5d6e9a77c659ea180270a30bebeb5a.svg" alt="">
+                    </div>
+                    <aside id="result-sidebar" aria-live="polite">
+                        <div class="broadcast-brand">
+                            <img class="broadcast-brand-logo" src="figma-assets/0374af4028e92eb9f270c37e50c02dbb76a48229.svg" alt="BGIS 2026">
+                            <h1 class="broadcast-brand-title"><span>GACHA GIVEAWAY</span></h1>
+                        </div>
+                        <div class="result-sidebar-card">
+                            <div class="result-sidebar-ticket">
+                                
+                                <div class="result-sidebar-ticket-inner">
+                                    <div class="result-sidebar-glow" id="sidebar-result-accent" aria-hidden="true"></div>
+                                    <div class="result-sidebar-number-frame">
+                                        <div id="sidebar-result-number" class="is-pending">---</div>
+                                        <div class="result-sidebar-overlay" aria-hidden="true">
+                                            <div class="result-sidebar-overlay-top"></div>
+                                            <div class="result-sidebar-overlay-bottom"></div>
+                                        </div>
+                                    </div>
+                                    <img class="result-sidebar-polygon result-sidebar-polygon-left" src="figma-assets/66e243b2a171db754a8c6563f8d70ac619125bd3.svg" alt="" aria-hidden="true">
+                                    <img class="result-sidebar-polygon result-sidebar-polygon-right" src="figma-assets/4605052d8834465577215e7b4c0e68afedeb3481.svg" alt="" aria-hidden="true">
+                                </div>
+                                
+                            </div>
+                            <div class="result-sidebar-label">Winning Ticket</div>
+                        </div>
+                    </aside>
+        <div id="app">
             <svg id="ICON" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                 viewBox="0 0 737.79 1116.49">
             <defs>
                 <style>
                     .cls-1 {
-                        fill: #3b0093;
+                        fill: #5139ae;
                     }
 
                     .cls-2 {
-                        fill: #ec4843;
+                        fill: #ef4b47;
                     }
 
                     .cls-3 {
-                        opacity: .5;
+                        opacity: .58;
                     }
 
                     .cls-3,
-                    .cls-4,
                     .cls-5 {
-                        fill: #f6faf3;
+                        fill: #987FFF;
                     }
 
                     .cls-6 {
@@ -48,7 +75,7 @@
                     }
 
                     .cls-7 {
-                        fill: #4f3a2e;
+                        fill: #4a3172;
                     }
 
                     .cls-8 {
@@ -78,11 +105,11 @@
                     }
 
                     .cls-14 {
-                        fill: #3b2a22;
+                        fill: #2d1857;
                     }
 
                     .cls-15 {
-                        fill: white;
+                        fill: #FFCE00;
                     }
 
                     .cls-16 {
@@ -90,16 +117,17 @@
                     }
 
                     .cls-17 {
-                        fill: #dbedf7;
-                        opacity: .8;
+                        fill: #905be9;
+                        opacity: .2;
                     }
 
                     .cls-18 {
-                        fill: #deeefb;
+                        fill: #24125d;
                     }
 
                     .cls-19 {
-                        fill: #cccfe2;
+                        fill: rgba(164, 142, 255, 0.25);
+                        mix-blend-mode: plus-lighter;
                     }
 
                     .cls-20 {
@@ -111,7 +139,7 @@
                     }
 
                     .cls-22 {
-                        fill: #7f6064;
+                        fill: #3f2a78;
                     }
 
                     .cls-23 {
@@ -123,8 +151,8 @@
                     }
 
                     .cls-25 {
-                        fill: #c2def2;
-                        opacity: .75;
+                        fill: #f2f0ff;
+                        opacity: .42;
                     }
 
                     .cls-26 {
@@ -136,11 +164,7 @@
                     }
 
                     .cls-28 {
-                        fill: url(#gold-black-gradient);
-                    }
-
-                    .cls-4 {
-                        opacity: .1;
+                        fill: #FFCE00;
                     }
 
                     .cls-29 {
@@ -164,19 +188,19 @@
                     }
                 </style>
                 <clipPath id="clippath">
-                    <circle class="cls-11" cx="366.3" cy="375.63" r="327.95" />
+                    <path
+                        d="M282.704 565.142C438.837 565.142 565.408 438.631 565.408 282.571C565.408 126.511 438.837 0 282.704 0C126.571 0 0 126.511 0 282.571C0 438.631 126.571 565.142 282.704 565.142Z"
+                        transform="translate(38.35 47.68) scale(1.1600472579 1.1605932668)" />
                 </clipPath>
 
                 <linearGradient id="purple-shell-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="rgb(147, 70, 255)" />
-                    <stop offset="50%" stop-color="#4400a3" />
-                    <stop offset="100%" stop-color="#1e0148" />
+                    <stop offset="0%" stop-color="#7F34E7" />
+                    <stop offset="100%" stop-color="#240156" />
                 </linearGradient>
 
                 <linearGradient id="gold-black-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#FFD200" />
-                    <stop offset="80%" stop-color="#dab200" />
-                    <stop offset="100%" stop-color="#4e4e4e" />
+                    <stop offset="100%" stop-color="#FFF15B" />
                 </linearGradient>
 
                 <!-- Universal sphere highlighter for balls -->
@@ -185,6 +209,20 @@
                     <stop offset="30%" stop-color="rgba(255,255,255,0.4)" />
                     <stop offset="100%" stop-color="rgba(0,0,0,0.4)" />
                 </radialGradient>
+
+                <filter id="filter0_i_2077_3246" x="0" y="0" width="565.408" height="565.143"
+                    filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+                    <feColorMatrix in="SourceAlpha" type="matrix"
+                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                    <feOffset />
+                    <feGaussianBlur stdDeviation="125" />
+                    <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+                    <feColorMatrix type="matrix"
+                        values="0 0 0 0 0.494118 0 0 0 0 0.372549 0 0 0 0 1 0 0 0 1 0" />
+                    <feBlend mode="plus-lighter" in2="shape" result="effect1_innerShadow_2077_3246" />
+                </filter>
 
             </defs>
             <ellipse class="cls-10" cx="368.9" cy="1071.74" rx="368.9" ry="44.75" />
@@ -463,7 +501,14 @@
           </g>
         </g> -->
                         <g id="balls-container"></g>
-                        <circle class="cls-4" cx="366.3" cy="375.63" r="327.95" />
+                        <svg x="38.35" y="47.68" width="655.9" height="655.9" viewBox="0 0 565.408 565.142"
+                            fill="none" aria-hidden="true">
+                            <g filter="url(#filter0_i_2077_3246)" style="mix-blend-mode:lighten">
+                                <path
+                                    d="M282.704 565.142C438.837 565.142 565.408 438.631 565.408 282.571C565.408 126.511 438.837 0 282.704 0C126.571 0 0 126.511 0 282.571C0 438.631 126.571 565.142 282.704 565.142Z"
+                                    fill="#03020D" />
+                            </g>
+                        </svg>
                         <path class="cls-3"
                             d="M131.18,375.63c0-118.23,62.89-222.03,156.97-279.74-122.31,34.21-212.29,146.66-212.29,279.74s89.98,245.53,212.29,279.74c-94.08-57.71-156.97-161.52-156.97-279.74Z" />
                     </g>
@@ -483,8 +528,8 @@
                         d="M593.2,1040.13H144.6c-31.54,0-55.19-28.85-49.01-59.77l61.9-283.12,6.22-28.44h410.38l45.19,206.68,22.93,104.88c6.18,30.92-17.47,59.77-49.01,59.77Z" />
                     <path class="cls-28"
                         d="M619.27,875.47c-166-139.28-356.17-171.78-461.79-178.24l6.22-28.44h410.38l45.19,206.68Z" />
-                    <path class="cls-8"
-                        d="M140.36,925.41c-.36,0-.73-.04-1.09-.12-2.74-.6-4.48-3.31-3.88-6.05l42.47-194.26c.6-2.74,3.31-4.48,6.06-3.88,2.74.6,4.48,3.31,3.88,6.05l-42.47,194.26c-.52,2.38-2.63,4-4.96,4Z" />
+                        <path class="cls-15"
+                            d="M140.36,925.41c-.36,0-.73-.04-1.09-.12-2.74-.6-4.48-3.31-3.88-6.05l42.47-194.26c.6-2.74,3.31-4.48,6.06-3.88,2.74.6,4.48,3.31,3.88,6.05l-42.47,194.26c-.52,2.38-2.63,4-4.96,4Z" />
                     <g>
                         <g>
                             <rect class="cls-30" x="261.95" y="680.7" width="208.69" height="298.09" rx="21.31"
@@ -510,7 +555,7 @@
                             d="M451.37,953.1c0,3.39-2.75,6.14-6.14,6.14s-6.14-2.75-6.14-6.14,2.75-6.14,6.14-6.14,6.14,2.75,6.14,6.14Z" />
                         <path class="cls-22"
                             d="M281.23,953.1c0,3.39,2.75,6.14,6.14,6.14s6.14-2.75,6.14-6.14-2.75-6.14-6.14-6.14-6.14,2.75-6.14,6.14Z" />
-                        <g id="result-display" transform="translate(366.3 902.25) scale(1.22) translate(-366.3 -902.25)">
+                        <g id="result-display" transform="translate(366.3 902.25) scale(1.02) translate(-366.3 -902.25)">
                             <rect class="cls-21" x="319.34" y="855.02" width="93.92" height="93.92" rx="7.86" ry="7.86" />
                             <path class="cls-22"
                                 d="M402.18,901.98c0,19.82-16.07,35.88-35.88,35.88s-35.89-16.07-35.89-35.88c0-3.03.37-5.97,1.09-8.77,3.91-15.58,18-27.11,34.8-27.11s30.89,11.53,34.8,27.11c.71,2.8,1.08,5.74,1.08,8.77Z" />
@@ -530,18 +575,10 @@
                         </g>
 
                         <g id="knob-group" style="transform-origin: 366.3px 778.58px; cursor: pointer;">
-                            <circle class="cls-22" cx="366.3" cy="771.55" r="60.06"
-                                transform="translate(-167.47 104.8) rotate(-13.28)" />
-                            <circle class="cls-29" cx="366.3" cy="778.58" r="60.06"
-                                transform="translate(-443.25 487.05) rotate(-45)" />
-
-                            <!-- Internal parts of the rotating dial -->
-                            <path class="cls-2"
-                                d="M426.8,761.57l-60.51,5.47v23.08l60.51,5.47c8.84.8,16.47-6.17,16.47-15.05v-3.92c0-8.88-7.62-15.85-16.47-15.05Z" />
-                            <path class="cls-2"
-                                d="M305.79,761.57l60.51,5.47v23.08l-60.51,5.47c-8.84.8-16.47-6.17-16.47-15.05v-3.92c0-8.88,7.62-15.85,16.47-15.05Z" />
-                            <circle class="cls-7" cx="366.3" cy="778.58" r="13.94"
-                                transform="translate(-443.25 487.05) rotate(-45)" />
+                            <circle class="cls-22" cx="366.3" cy="778.58" r="62.5" />
+                            <circle class="cls-29" cx="366.3" cy="778.58" r="54.5" />
+                            <rect class="cls-2" x="304.22" y="763.87" width="124.16" height="29.42" rx="14.71" ry="14.71" />
+                            <circle class="cls-7" cx="366.3" cy="778.58" r="13.94" />
                         </g>
                     </g>
                     <g>
@@ -550,25 +587,15 @@
                         <ellipse class="cls-6" cx="366.3" cy="34.12" rx="38.97" ry="34.12" />
                         <path class="cls-27"
                             d="M475.44,34.12h-218.28c-20.68,0-37.45,16.77-37.45,37.45h293.17c0-20.68-16.77-37.45-37.45-37.45Z" />
-                        <path class="cls-8"
+                        <path class="cls-15"
                             d="M381.65,51.18h-133.11c-1.92,0-3.5-1.57-3.5-3.5h0c0-1.93,1.58-3.5,3.5-3.5h133.11c1.93,0,3.5,1.57,3.5,3.5h0c0,1.93-1.58,3.5-3.5,3.5Z" />
                     </g>
                 </g>
             </svg>
                     </div>
-                    <aside id="result-sidebar" aria-live="polite">
-                        <div class="result-sidebar-card">
-                            <div class="result-sidebar-label">Result Preview</div>
-                            <svg id="result-preview" viewBox="0 0 240 220" role="img" aria-label="Selected result preview">
-                                <rect class="result-preview-frame" x="10" y="10" width="220" height="200" rx="28" ry="28"></rect>
-                                <ellipse class="result-preview-ball-shadow" cx="120" cy="152" rx="42" ry="14"></ellipse>
-                                <circle class="result-preview-ball-shell" cx="120" cy="112" r="48"></circle>
-                                <circle id="sidebar-result-ball-color" cx="120" cy="104" r="42"></circle>
-                                <ellipse class="result-preview-ball-highlight" cx="102" cy="84" rx="16" ry="10" transform="rotate(-35 102 84)"></ellipse>
-                                <text id="sidebar-result-number" class="is-pending" x="120" y="106" text-anchor="middle" dominant-baseline="middle">---</text>
-                            </svg>
-                        </div>
-                    </aside>
+                    <div class="broadcast-rail broadcast-rail-right" aria-hidden="true">
+                        <img src="figma-assets/fc5fb94b1fc4e9cee788e23021a8ab6fab043a15.svg" alt="">
+                    </div>
                 </div>
             </div>
         </section>

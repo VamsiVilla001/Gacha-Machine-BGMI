@@ -1,0 +1,24 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 70.2295 74.75" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Polygon 3" filter="url(#filter0_d_2087_1280)">
+<path d="M35.1147 8L60.2295 62.75H10L35.1147 8Z" fill="url(#paint0_linear_2087_1280)"/>
+</g>
+<defs>
+<filter id="filter0_d_2087_1280" x="0" y="0" width="70.2295" height="74.75" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="2"/>
+<feGaussianBlur stdDeviation="5"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2087_1280"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2087_1280" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_2087_1280" x1="6.11474" y1="44.5" x2="64.1147" y2="44.5" gradientUnits="userSpaceOnUse">
+<stop stop-color="#786100"/>
+<stop offset="0.346154" stop-color="#FFCE00"/>
+<stop offset="0.485577" stop-color="#FFCE00"/>
+<stop offset="0.625" stop-color="#FFCE00"/>
+<stop offset="1" stop-color="#786100"/>
+</linearGradient>
+</defs>
+</svg>

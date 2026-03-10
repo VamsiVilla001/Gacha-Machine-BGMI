@@ -3,7 +3,36 @@
  * Runs the machine animation and reacts to live control commands over WebSocket.
  */
 
-const WS_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?role=broadcast`;
+function sanitizeRoomId(rawRoomId) {
+    return String(rawRoomId || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        .slice(0, 64);
+}
+
+function getRoomId() {
+    return sanitizeRoomId(new URL(window.location.href).searchParams.get("room")) || "default";
+}
+
+function getWebSocketOrigin() {
+    if (location.protocol === "https:") {
+        return `wss://${location.host}`;
+    }
+
+    if (location.protocol === "http:") {
+        return `ws://${location.host}`;
+    }
+
+    return "ws://127.0.0.1:3000";
+}
+
+function buildWebSocketUrl() {
+    const url = new URL("/ws", `${getWebSocketOrigin()}/`);
+    url.searchParams.set("role", "broadcast");
+    url.searchParams.set("room", getRoomId());
+    return url.toString();
+}
 
 const container = document.getElementById("balls-container");
 const knobGroup = document.getElementById("knob-group");
@@ -193,8 +222,10 @@ function normalizeConfig(config) {
 
 function applyConfig(config) {
     broadcastState.config = normalizeConfig(config);
-    resolutionReadout.textContent =
-        broadcastState.config.resolution === "3840x2160" ? "3840 x 2160" : "1920 x 1080";
+    if (resolutionReadout) {
+        resolutionReadout.textContent =
+            broadcastState.config.resolution === "3840x2160" ? "3840 x 2160" : "1920 x 1080";
+    }
     broadcastCanvas.dataset.resolution = broadcastState.config.resolution;
 }
 
@@ -208,10 +239,14 @@ function getRandomResultBallColor() {
 
 function setPendingResult() {
     resultBallNumber.textContent = "---";
-    sidebarResultNumber.textContent = "---";
+    if (sidebarResultNumber) {
+        sidebarResultNumber.textContent = "---";
+    }
     resultBallColor.style.fill = "#9aa2af";
     resultBall.classList.add("is-pending");
-    sidebarResultNumber.classList.add("is-pending");
+    if (sidebarResultNumber) {
+        sidebarResultNumber.classList.add("is-pending");
+    }
 }
 
 function showResult(number, color) {
@@ -220,10 +255,14 @@ function showResult(number, color) {
     }
 
     resultBallNumber.textContent = formatBallNumber(number);
-    sidebarResultNumber.textContent = formatBallNumber(number);
+    if (sidebarResultNumber) {
+        sidebarResultNumber.textContent = formatBallNumber(number);
+    }
     resultBallColor.style.fill = color;
     resultBall.classList.remove("is-pending");
-    sidebarResultNumber.classList.remove("is-pending");
+    if (sidebarResultNumber) {
+        sidebarResultNumber.classList.remove("is-pending");
+    }
 }
 
 function clearResult() {
@@ -535,7 +574,7 @@ function handleSocketMessage(event) {
 }
 
 function connectSocket() {
-    const socket = new WebSocket(WS_URL);
+    const socket = new WebSocket(buildWebSocketUrl());
     broadcastState.socket = socket;
 
     socket.addEventListener("open", () => {

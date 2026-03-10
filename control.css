@@ -88,9 +88,19 @@ h1 {
     text-transform: uppercase;
 }
 
+.panel-card-session {
+    grid-column: 1 / -1;
+}
+
 .field-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.session-grid {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
     gap: 12px;
 }
 
@@ -132,6 +142,33 @@ h1 {
 .field input:disabled {
     opacity: 0.58;
     cursor: not-allowed;
+}
+
+.session-room-id {
+    display: flex;
+    align-items: center;
+    min-height: 52px;
+    padding: 0 14px;
+    border: 1px solid rgba(79, 58, 46, 0.14);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: #231f20;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    box-sizing: border-box;
+}
+
+.session-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.session-actions .secondary-action-button {
+    flex: 1 1 180px;
 }
 
 .toggle-group {
@@ -190,7 +227,8 @@ h1 {
 }
 
 #result-mode-caption,
-#control-hint {
+#control-hint,
+#session-hint {
     margin: 10px 0 0;
     color: #5e6978;
     font-size: 14px;
@@ -265,6 +303,7 @@ h1 {
     }
 
     .panel-grid,
+    .session-grid,
     .field-grid,
     .toggle-group {
         grid-template-columns: 1fr;

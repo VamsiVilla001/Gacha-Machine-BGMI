@@ -1,4 +1,61 @@
 {
-  "pickedNumbers": [],
-  "lastResult": null
+  "rooms": {
+    "default": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": null,
+      "pickedNumbers": []
+    },
+    "room-a": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "scripted",
+        "scriptedNumber": 123
+      },
+      "lastResult": null,
+      "pickedNumbers": []
+    },
+    "room-b": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": null,
+      "pickedNumbers": []
+    },
+    "b09663de-4739-4b6a-8997-eb3ea8dced71": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": 123,
+      "pickedNumbers": [
+        123
+      ]
+    },
+    "650dc292-8950-4057-beac-57cf7e520126": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": null,
+      "pickedNumbers": []
+    }
+  }
 }

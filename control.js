@@ -1,7 +1,11 @@
-const WS_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?role=control`;
-
 const connectionStatus = document.getElementById("connection-status");
 const machineStatus = document.getElementById("machine-status");
+const sessionRoomId = document.getElementById("session-room-id");
+const broadcastLinkInput = document.getElementById("broadcast-link-input");
+const generateLinkButton = document.getElementById("generate-link-button");
+const openBroadcastButton = document.getElementById("open-broadcast-button");
+const copyBroadcastLinkButton = document.getElementById("copy-broadcast-link-button");
+const sessionHint = document.getElementById("session-hint");
 const minNumberInput = document.getElementById("min-number-input");
 const maxNumberInput = document.getElementById("max-number-input");
 const scriptedNumberInput = document.getElementById("scripted-number-input");
@@ -13,9 +17,13 @@ const resultModeCaption = document.getElementById("result-mode-caption");
 const pickHistoryList = document.getElementById("pick-history-list");
 const resolutionButtons = Array.from(document.querySelectorAll("[data-resolution-option]"));
 const selectionModeButtons = Array.from(document.querySelectorAll("[data-selection-mode]"));
+const FALLBACK_HTTP_ORIGIN = "http://127.0.0.1:3000";
+const FALLBACK_WS_ORIGIN = "ws://127.0.0.1:3000";
 
 const controlState = {
     socket: null,
+    connectionId: 0,
+    roomId: "",
     config: {
         resolution: "1920x1080",
         minNumber: 0,
@@ -30,6 +38,93 @@ const controlState = {
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+}
+
+function sanitizeRoomId(rawRoomId) {
+    return String(rawRoomId || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        .slice(0, 64);
+}
+
+function generateRoomId() {
+    if (window.crypto?.randomUUID) {
+        return sanitizeRoomId(window.crypto.randomUUID());
+    }
+
+    return sanitizeRoomId(`room-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+}
+
+function ensureRoomId() {
+    const url = new URL(window.location.href);
+    const existingRoomId = sanitizeRoomId(url.searchParams.get("room"));
+
+    if (existingRoomId) {
+        return existingRoomId;
+    }
+
+    const nextRoomId = generateRoomId();
+    url.searchParams.set("room", nextRoomId);
+    window.history.replaceState({}, "", url);
+    return nextRoomId;
+}
+
+function getHttpOrigin() {
+    if (location.protocol === "http:" || location.protocol === "https:") {
+        return window.location.origin;
+    }
+
+    return FALLBACK_HTTP_ORIGIN;
+}
+
+function getWebSocketOrigin() {
+    if (location.protocol === "https:") {
+        return `wss://${location.host}`;
+    }
+
+    if (location.protocol === "http:") {
+        return `ws://${location.host}`;
+    }
+
+    return FALLBACK_WS_ORIGIN;
+}
+
+function buildWebSocketUrl() {
+    const url = new URL("/ws", `${getWebSocketOrigin()}/`);
+    url.searchParams.set("role", "control");
+    url.searchParams.set("room", controlState.roomId);
+    return url.toString();
+}
+
+function getBroadcastUrl() {
+    const url = new URL("/broadcast.html", `${getHttpOrigin()}/`);
+    url.searchParams.set("room", controlState.roomId);
+    return url.toString();
+}
+
+function updateSessionUI(message) {
+    sessionRoomId.textContent = controlState.roomId;
+    broadcastLinkInput.value = getBroadcastUrl();
+    sessionHint.textContent =
+        message ||
+        "Use this generated link to open the broadcast page in any browser and join the same control room. Keep `npm start` running.";
+}
+
+function switchRoom(nextRoomId) {
+    controlState.roomId = sanitizeRoomId(nextRoomId) || generateRoomId();
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("room", controlState.roomId);
+    window.history.replaceState({}, "", nextUrl);
+    updateSessionUI();
+
+    const previousSocket = controlState.socket;
+    connectSocket();
+
+    if (previousSocket && previousSocket.readyState < WebSocket.CLOSING) {
+        previousSocket.close();
+    }
 }
 
 function normalizeConfig(rawConfig) {
@@ -137,11 +232,10 @@ function applyState(state) {
     }
 
     controlState.machineRunning = Boolean(state.machineRunning);
-    controlState.lastResult =
-        typeof state.lastResult === "number" ? state.lastResult : controlState.lastResult;
+    controlState.lastResult = typeof state.lastResult === "number" ? state.lastResult : null;
     controlState.pickedNumbers = Array.isArray(state.pickedNumbers)
         ? state.pickedNumbers.slice()
-        : controlState.pickedNumbers;
+        : [];
 
     minNumberInput.value = String(controlState.config.minNumber);
     maxNumberInput.value = String(controlState.config.maxNumber);
@@ -173,18 +267,37 @@ function handleSocketMessage(event) {
 }
 
 function connectSocket() {
-    const socket = new WebSocket(WS_URL);
+    const connectionId = ++controlState.connectionId;
+    const socket = new WebSocket(buildWebSocketUrl());
     controlState.socket = socket;
+    connectionStatus.textContent = "Connecting";
 
     socket.addEventListener("open", () => {
+        if (connectionId !== controlState.connectionId) {
+            socket.close();
+            return;
+        }
         connectionStatus.textContent = "Connected";
     });
 
-    socket.addEventListener("message", handleSocketMessage);
+    socket.addEventListener("message", (event) => {
+        if (connectionId !== controlState.connectionId) {
+            return;
+        }
+        handleSocketMessage(event);
+    });
 
     socket.addEventListener("close", () => {
+        if (connectionId !== controlState.connectionId) {
+            return;
+        }
         connectionStatus.textContent = "Reconnecting";
-        window.setTimeout(connectSocket, 1000);
+        window.setTimeout(() => {
+            if (connectionId !== controlState.connectionId) {
+                return;
+            }
+            connectSocket();
+        }, 1000);
     });
 }
 
@@ -221,6 +334,27 @@ function updateScriptedNumber(shouldSend = true) {
 }
 
 function bindControls() {
+    generateLinkButton.addEventListener("click", () => {
+        switchRoom(generateRoomId());
+    });
+
+    openBroadcastButton.addEventListener("click", () => {
+        window.open(getBroadcastUrl(), "_blank", "noopener");
+    });
+
+    copyBroadcastLinkButton.addEventListener("click", async () => {
+        const link = getBroadcastUrl();
+
+        try {
+            await navigator.clipboard.writeText(link);
+            updateSessionUI("Broadcast link copied. Open it in the other browser.");
+        } catch {
+            broadcastLinkInput.focus();
+            broadcastLinkInput.select();
+            updateSessionUI("Clipboard access failed. Copy the selected broadcast link manually.");
+        }
+    });
+
     resolutionButtons.forEach((button) => {
         button.addEventListener("click", () => {
             controlState.config.resolution = button.dataset.resolutionOption || "1920x1080";
@@ -261,11 +395,13 @@ function bindControls() {
     });
 }
 
+controlState.roomId = ensureRoomId();
 applyState({
     config: controlState.config,
     machineRunning: false,
     lastResult: null,
     pickedNumbers: []
 });
+updateSessionUI();
 bindControls();
 connectSocket();

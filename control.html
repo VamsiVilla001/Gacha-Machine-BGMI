@@ -20,6 +20,26 @@
         </section>
 
         <section class="panel-grid">
+            <section class="panel-card panel-card-session">
+                <h2>Broadcast Session</h2>
+                <div class="session-grid">
+                    <label class="field">
+                        <span>Room ID</span>
+                        <output id="session-room-id" class="session-room-id"></output>
+                    </label>
+                    <label class="field">
+                        <span>Broadcast Link</span>
+                        <input id="broadcast-link-input" type="text" readonly>
+                    </label>
+                </div>
+                <div class="session-actions">
+                    <button type="button" id="generate-link-button" class="secondary-action-button">New Broadcast Link</button>
+                    <button type="button" id="open-broadcast-button" class="secondary-action-button">Open Broadcast</button>
+                    <button type="button" id="copy-broadcast-link-button" class="secondary-action-button">Copy Link</button>
+                </div>
+                <p id="session-hint">Use this generated link to open the broadcast page in any browser and join the same control room.</p>
+            </section>
+
             <section class="panel-card">
                 <h2>Broadcast Resolution</h2>
                 <div class="toggle-group">

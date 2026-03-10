@@ -6,19 +6,64 @@ const { WebSocketServer } = require("ws");
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const ROOT = __dirname;
 const STORAGE_FILE = path.join(ROOT, "picked-history.json");
+const DEFAULT_ROOM_ID = "default";
 
-const state = {
-    config: {
-        resolution: "1920x1080",
-        minNumber: 0,
-        maxNumber: 999,
-        selectionMode: "random",
-        scriptedNumber: 777
-    },
-    machineRunning: false,
-    lastResult: null,
-    pickedNumbers: []
-};
+const rooms = new Map();
+
+function createDefaultState() {
+    return {
+        config: {
+            resolution: "1920x1080",
+            minNumber: 0,
+            maxNumber: 999,
+            selectionMode: "random",
+            scriptedNumber: 777
+        },
+        machineRunning: false,
+        lastResult: null,
+        pickedNumbers: []
+    };
+}
+
+function sanitizeRoomId(rawRoomId) {
+    const roomId = String(rawRoomId || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        .slice(0, 64);
+
+    return roomId || DEFAULT_ROOM_ID;
+}
+
+function normalizeRoomState(rawState = {}) {
+    const nextState = createDefaultState();
+
+    if (rawState.config) {
+        nextState.config = normalizeConfig(rawState.config);
+    }
+
+    if (Array.isArray(rawState.pickedNumbers)) {
+        nextState.pickedNumbers = rawState.pickedNumbers
+            .map((value) => clamp(Number.parseInt(value, 10) || 0, 0, 999))
+            .filter((value, index, values) => values.indexOf(value) === index);
+    }
+
+    if (typeof rawState.lastResult === "number") {
+        nextState.lastResult = clamp(rawState.lastResult, 0, 999);
+    }
+
+    return nextState;
+}
+
+function getRoomState(roomId) {
+    const normalizedRoomId = sanitizeRoomId(roomId);
+
+    if (!rooms.has(normalizedRoomId)) {
+        rooms.set(normalizedRoomId, createDefaultState());
+    }
+
+    return rooms.get(normalizedRoomId);
+}
 
 function loadStorage() {
     try {
@@ -29,25 +74,29 @@ function loadStorage() {
         const raw = fs.readFileSync(STORAGE_FILE, "utf8");
         const parsed = JSON.parse(raw);
 
-        if (Array.isArray(parsed.pickedNumbers)) {
-            state.pickedNumbers = parsed.pickedNumbers
-                .map((value) => clamp(Number.parseInt(value, 10) || 0, 0, 999))
-                .filter((value, index, values) => values.indexOf(value) === index);
+        if (parsed && typeof parsed === "object" && parsed.rooms && typeof parsed.rooms === "object") {
+            for (const [roomId, roomState] of Object.entries(parsed.rooms)) {
+                rooms.set(sanitizeRoomId(roomId), normalizeRoomState(roomState));
+            }
+            return;
         }
 
-        if (typeof parsed.lastResult === "number") {
-            state.lastResult = clamp(parsed.lastResult, 0, 999);
-        }
+        rooms.set(DEFAULT_ROOM_ID, normalizeRoomState(parsed));
     } catch (error) {
         console.warn("Unable to read picked-history storage:", error.message);
     }
 }
 
 function saveStorage() {
-    const payload = {
-        pickedNumbers: state.pickedNumbers,
-        lastResult: state.lastResult
-    };
+    const payload = { rooms: {} };
+
+    for (const [roomId, roomState] of rooms.entries()) {
+        payload.rooms[roomId] = {
+            config: roomState.config,
+            lastResult: roomState.lastResult,
+            pickedNumbers: roomState.pickedNumbers
+        };
+    }
 
     try {
         fs.writeFileSync(STORAGE_FILE, JSON.stringify(payload, null, 2));
@@ -107,24 +156,25 @@ function broadcast(payload, predicate = () => true) {
     }
 }
 
-function broadcastSnapshot() {
+function broadcastSnapshot(roomId) {
     broadcast({
         type: "state_snapshot",
-        state
-    });
+        roomId,
+        state: getRoomState(roomId)
+    }, (client) => client.roomId === roomId);
 }
 
-function resolveNextNumber() {
-    if (state.config.selectionMode === "scripted") {
-        if (state.pickedNumbers.includes(state.config.scriptedNumber)) {
+function resolveNextNumber(roomState) {
+    if (roomState.config.selectionMode === "scripted") {
+        if (roomState.pickedNumbers.includes(roomState.config.scriptedNumber)) {
             return null;
         }
-        return state.config.scriptedNumber;
+        return roomState.config.scriptedNumber;
     }
 
     const availableNumbers = [];
-    for (let value = state.config.minNumber; value <= state.config.maxNumber; value++) {
-        if (!state.pickedNumbers.includes(value)) {
+    for (let value = roomState.config.minNumber; value <= roomState.config.maxNumber; value++) {
+        if (!roomState.pickedNumbers.includes(value)) {
             availableNumbers.push(value);
         }
     }
@@ -165,10 +215,14 @@ const wss = new WebSocketServer({ server, path: "/ws" });
 wss.on("connection", (socket, request) => {
     const url = new URL(request.url, `http://${request.headers.host}`);
     socket.role = url.searchParams.get("role") || "unknown";
+    socket.roomId = sanitizeRoomId(url.searchParams.get("room"));
+
+    const roomState = getRoomState(socket.roomId);
 
     sendJson(socket, {
         type: "state_snapshot",
-        state
+        roomId: socket.roomId,
+        state: roomState
     });
 
     socket.on("message", (rawMessage) => {
@@ -179,18 +233,21 @@ wss.on("connection", (socket, request) => {
             return;
         }
 
+        const activeRoomState = getRoomState(socket.roomId);
+
         if (message.type === "set_config") {
-            state.config = normalizeConfig(message.config);
-            broadcastSnapshot();
+            activeRoomState.config = normalizeConfig(message.config);
+            saveStorage();
+            broadcastSnapshot(socket.roomId);
             return;
         }
 
         if (message.type === "knob_command") {
-            const nextConfig = normalizeConfig(message.config || state.config);
-            state.config = nextConfig;
+            const nextConfig = normalizeConfig(message.config || activeRoomState.config);
+            activeRoomState.config = nextConfig;
 
             if (message.action !== "stop") {
-                const selectedNumber = resolveNextNumber();
+                const selectedNumber = resolveNextNumber(activeRoomState);
                 if (selectedNumber === null) {
                     sendJson(socket, {
                         type: "command_rejected",
@@ -199,7 +256,7 @@ wss.on("connection", (socket, request) => {
                                 ? "That scripted number has already been picked."
                                 : "No unused numbers remain in the current range."
                     });
-                    broadcastSnapshot();
+                    broadcastSnapshot(socket.roomId);
                     return;
                 }
 
@@ -210,7 +267,7 @@ wss.on("connection", (socket, request) => {
                         config: nextConfig,
                         selectedNumber
                     },
-                    (client) => client.role === "broadcast"
+                    (client) => client.role === "broadcast" && client.roomId === socket.roomId
                 );
                 return;
             }
@@ -221,35 +278,35 @@ wss.on("connection", (socket, request) => {
                     action: "stop",
                     config: nextConfig
                 },
-                (client) => client.role === "broadcast"
+                (client) => client.role === "broadcast" && client.roomId === socket.roomId
             );
             return;
         }
 
         if (message.type === "broadcast_status") {
-            state.machineRunning = Boolean(message.machineRunning);
-            broadcastSnapshot();
+            activeRoomState.machineRunning = Boolean(message.machineRunning);
+            broadcastSnapshot(socket.roomId);
             return;
         }
 
         if (message.type === "broadcast_result") {
             if (typeof message.resultNumber === "number") {
-                state.lastResult = clamp(message.resultNumber, 0, 999);
-                if (!state.pickedNumbers.includes(state.lastResult)) {
-                    state.pickedNumbers.push(state.lastResult);
+                activeRoomState.lastResult = clamp(message.resultNumber, 0, 999);
+                if (!activeRoomState.pickedNumbers.includes(activeRoomState.lastResult)) {
+                    activeRoomState.pickedNumbers.push(activeRoomState.lastResult);
                 }
                 saveStorage();
             }
-            state.machineRunning = false;
-            broadcastSnapshot();
+            activeRoomState.machineRunning = false;
+            broadcastSnapshot(socket.roomId);
             return;
         }
 
         if (message.type === "reset_history") {
-            state.lastResult = null;
-            state.pickedNumbers = [];
+            activeRoomState.lastResult = null;
+            activeRoomState.pickedNumbers = [];
             saveStorage();
-            broadcastSnapshot();
+            broadcastSnapshot(socket.roomId);
         }
     });
 });

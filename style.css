@@ -173,6 +173,7 @@ body {
     padding: 0;
     gap: 0;
     justify-content: center;
+    position: relative;
 }
 
 #app {
@@ -230,6 +231,23 @@ body {
     padding: 18px;
 }
 
+.broadcast-page #result-sidebar {
+    position: absolute;
+    top: 50%;
+    right: clamp(22px, 3vw, 46px);
+    transform: translateY(-50%);
+    width: clamp(220px, 18vw, 280px);
+    height: clamp(220px, 34vh, 340px);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.broadcast-page .result-sidebar-card {
+    backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, rgba(244, 247, 252, 0.94), rgba(223, 231, 243, 0.88));
+    box-shadow: 0 20px 34px rgba(10, 16, 26, 0.22);
+}
+
 .result-sidebar-label,
 .control-card-title,
 .field span {
@@ -252,6 +270,22 @@ body {
     fill: rgba(255, 255, 255, 0.44);
     stroke: rgba(79, 58, 46, 0.08);
     stroke-width: 2px;
+}
+
+.result-preview-ball-shadow {
+    fill: rgba(35, 31, 32, 0.18);
+}
+
+.result-preview-ball-shell {
+    fill: rgba(255, 255, 255, 0.92);
+}
+
+#sidebar-result-ball-color {
+    fill: #9aa2af;
+}
+
+.result-preview-ball-highlight {
+    fill: rgba(255, 255, 255, 0.52);
 }
 
 #sidebar-result-number {
@@ -500,6 +534,16 @@ body {
         width: min(100%, 260px);
         height: 220px;
         flex: 0 0 auto;
+    }
+
+    .broadcast-page #result-sidebar {
+        top: auto;
+        right: auto;
+        left: 50%;
+        bottom: 14px;
+        transform: translateX(-50%);
+        width: min(260px, calc(100vw - 28px));
+        height: 200px;
     }
 
     .field-grid,

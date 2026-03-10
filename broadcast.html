@@ -556,12 +556,24 @@
                 </g>
             </svg>
                     </div>
+                    <aside id="result-sidebar" aria-live="polite">
+                        <div class="result-sidebar-card">
+                            <div class="result-sidebar-label">Result Preview</div>
+                            <svg id="result-preview" viewBox="0 0 240 220" role="img" aria-label="Selected result preview">
+                                <rect class="result-preview-frame" x="10" y="10" width="220" height="200" rx="28" ry="28"></rect>
+                                <ellipse class="result-preview-ball-shadow" cx="120" cy="152" rx="42" ry="14"></ellipse>
+                                <circle class="result-preview-ball-shell" cx="120" cy="112" r="48"></circle>
+                                <circle id="sidebar-result-ball-color" cx="120" cy="104" r="42"></circle>
+                                <ellipse class="result-preview-ball-highlight" cx="102" cy="84" rx="16" ry="10" transform="rotate(-35 102 84)"></ellipse>
+                                <text id="sidebar-result-number" class="is-pending" x="120" y="106" text-anchor="middle" dominant-baseline="middle">---</text>
+                            </svg>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </section>
     </div>
     <output id="resolution-readout" hidden>1920 x 1080</output>
-    <output id="sidebar-result-number" hidden>---</output>
     <script src="runtime-config.js"></script>
     <script src="script.js"></script>
 </body>

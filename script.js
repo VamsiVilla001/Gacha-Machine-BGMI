@@ -42,6 +42,7 @@ const resultBall = document.getElementById("result-ball");
 const resultBallColor = document.getElementById("result-ball-color");
 const resultBallNumber = document.getElementById("result-ball-number");
 const sidebarResultNumber = document.getElementById("sidebar-result-number");
+const sidebarResultBallColor = document.getElementById("sidebar-result-ball-color");
 
 const CONTAINER_CX = 366.3;
 const CONTAINER_CY = 375.6;
@@ -238,12 +239,21 @@ function getRandomResultBallColor() {
 }
 
 function setPendingResult() {
-    resultBallNumber.textContent = "---";
+    if (resultBallNumber) {
+        resultBallNumber.textContent = "---";
+    }
     if (sidebarResultNumber) {
         sidebarResultNumber.textContent = "---";
     }
-    resultBallColor.style.fill = "#9aa2af";
-    resultBall.classList.add("is-pending");
+    if (resultBallColor) {
+        resultBallColor.style.fill = "#9aa2af";
+    }
+    if (sidebarResultBallColor) {
+        sidebarResultBallColor.style.fill = "#9aa2af";
+    }
+    if (resultBall) {
+        resultBall.classList.add("is-pending");
+    }
     if (sidebarResultNumber) {
         sidebarResultNumber.classList.add("is-pending");
     }
@@ -254,12 +264,21 @@ function showResult(number, color) {
         return;
     }
 
-    resultBallNumber.textContent = formatBallNumber(number);
+    if (resultBallNumber) {
+        resultBallNumber.textContent = formatBallNumber(number);
+    }
     if (sidebarResultNumber) {
         sidebarResultNumber.textContent = formatBallNumber(number);
     }
-    resultBallColor.style.fill = color;
-    resultBall.classList.remove("is-pending");
+    if (resultBallColor) {
+        resultBallColor.style.fill = color;
+    }
+    if (sidebarResultBallColor) {
+        sidebarResultBallColor.style.fill = color;
+    }
+    if (resultBall) {
+        resultBall.classList.remove("is-pending");
+    }
     if (sidebarResultNumber) {
         sidebarResultNumber.classList.remove("is-pending");
     }

@@ -520,133 +520,262 @@
 
             function createSlotAudio() {
                 const ToneLib = window.Tone;
-                const reelPan = [-0.42, 0, 0.42];
-
-                if (!ToneLib) {
-                    return {
-                        play() {},
-                        resume() {
-                            return Promise.resolve();
-                        },
-                        setMuted() {},
-                        get muted() {
-                            return false;
-                        }
-                    };
-                }
-
-                const limiter = new ToneLib.Limiter(-1).toDestination();
-                const masterGain = new ToneLib.Gain(0.55).connect(limiter);
-                const leverPanner = new ToneLib.Panner(0.52).connect(masterGain);
-                const tickCooldownByReel = [-Infinity, -Infinity, -Infinity];
-                const finalAccent = new ToneLib.Synth({
-                    oscillator: { type: "triangle" },
-                    envelope: {
-                        attack: 0.001,
-                        decay: 0.12,
-                        sustain: 0,
-                        release: 0.06
-                    }
-                }).connect(masterGain);
-                const leverNoise = new ToneLib.NoiseSynth({
-                    noise: { type: "brown" },
-                    envelope: {
-                        attack: 0.001,
-                        decay: 0.07,
-                        sustain: 0
-                    }
-                }).connect(leverPanner);
-                const leverTone = new ToneLib.MembraneSynth({
-                    pitchDecay: 0.03,
-                    octaves: 2.4,
-                    oscillator: { type: "triangle" },
-                    envelope: {
-                        attack: 0.001,
-                        decay: 0.16,
-                        sustain: 0,
-                        release: 0.07
-                    }
-                }).connect(leverPanner);
-                const reelSynths = reelPan.map((panValue) => {
-                    const panner = new ToneLib.Panner(panValue).connect(masterGain);
-
-                    return {
-                        tickNoise: new ToneLib.NoiseSynth({
-                            noise: { type: "white" },
-                            envelope: {
-                                attack: 0.001,
-                                decay: 0.028,
-                                sustain: 0
-                            }
-                        }).connect(panner),
-                        tickTone: new ToneLib.Synth({
-                            oscillator: { type: "square" },
-                            envelope: {
-                                attack: 0.001,
-                                decay: 0.04,
-                                sustain: 0,
-                                release: 0.02
-                            }
-                        }).connect(panner),
-                        stopNoise: new ToneLib.NoiseSynth({
-                            noise: { type: "pink" },
-                            envelope: {
-                                attack: 0.001,
-                                decay: 0.05,
-                                sustain: 0
-                            }
-                        }).connect(panner),
-                        stopTone: new ToneLib.MembraneSynth({
-                            pitchDecay: 0.012,
-                            octaves: 1.8,
-                            oscillator: { type: "square" },
-                            envelope: {
-                                attack: 0.001,
-                                decay: 0.12,
-                                sustain: 0,
-                                release: 0.04
-                            }
-                        }).connect(panner)
-                    };
-                });
+                const toneAvailable = Boolean(ToneLib);
+                const spinLoopAudio = new Audio("./assets/audio/slot.mp3");
+                const spinPreviewAudio = new Audio("./assets/audio/slot.mp3");
                 let muted = false;
+                let mediaPrimed = false;
+                let unlockPreviewPlayed = false;
+                let previewTimer = 0;
+                let spinFadeFrame = 0;
+                let spinLoopPlaying = false;
+                let masterGain = null;
+                let leverNoise = null;
+                let leverTone = null;
+                let stopNoise = null;
+                let stopTone = null;
+                let finalAccent = null;
 
-                function safeResume() {
-                    return ToneLib.start().catch(() => {});
+                spinLoopAudio.preload = "auto";
+                spinLoopAudio.loop = true;
+                spinLoopAudio.volume = 0.88;
+                spinPreviewAudio.preload = "auto";
+                spinPreviewAudio.loop = false;
+                spinPreviewAudio.volume = 0.76;
+
+                if (toneAvailable) {
+                    const limiter = new ToneLib.Limiter(-1).toDestination();
+                    masterGain = new ToneLib.Gain(0.78).connect(limiter);
+                    const leverPanner = new ToneLib.Panner(0.52).connect(masterGain);
+                    const stopPanner = new ToneLib.Panner(0.08).connect(masterGain);
+
+                    leverNoise = new ToneLib.NoiseSynth({
+                        noise: { type: "pink" },
+                        envelope: {
+                            attack: 0.001,
+                            decay: 0.045,
+                            sustain: 0
+                        }
+                    }).connect(leverPanner);
+                    leverTone = new ToneLib.MembraneSynth({
+                        pitchDecay: 0.022,
+                        octaves: 2.1,
+                        oscillator: { type: "sine" },
+                        envelope: {
+                            attack: 0.001,
+                            decay: 0.14,
+                            sustain: 0,
+                            release: 0.07
+                        }
+                    }).connect(leverPanner);
+                    stopNoise = new ToneLib.NoiseSynth({
+                        noise: { type: "pink" },
+                        envelope: {
+                            attack: 0.001,
+                            decay: 0.045,
+                            sustain: 0,
+                            release: 0.015
+                        }
+                    }).connect(stopPanner);
+                    stopTone = new ToneLib.MembraneSynth({
+                        pitchDecay: 0.014,
+                        octaves: 1.65,
+                        oscillator: { type: "square" },
+                        envelope: {
+                            attack: 0.001,
+                            decay: 0.09,
+                            sustain: 0,
+                            release: 0.04
+                        }
+                    }).connect(stopPanner);
+                    finalAccent = new ToneLib.MetalSynth({
+                        frequency: 410,
+                        envelope: {
+                            attack: 0.001,
+                            decay: 0.16,
+                            release: 0.06
+                        },
+                        harmonicity: 5.1,
+                        modulationIndex: 18,
+                        resonance: 2600,
+                        octaves: 1.4
+                    }).connect(masterGain);
                 }
 
-                function playLeverPull() {
-                    const now = ToneLib.now();
-                    leverNoise.triggerAttackRelease("32n", now, 0.4);
-                    leverTone.triggerAttackRelease("C2", "16n", now, 0.72);
+                function getToneState() {
+                    if (!toneAvailable) {
+                        return "unavailable";
+                    }
+
+                    if (typeof ToneLib.getContext === "function") {
+                        return ToneLib.getContext().state;
+                    }
+
+                    if (ToneLib.context && typeof ToneLib.context.state === "string") {
+                        return ToneLib.context.state;
+                    }
+
+                    return "running";
                 }
 
-                function playReelTick(reelIndex) {
-                    const boundedIndex = clamp(Number(reelIndex) || 0, 0, reelPan.length - 1);
-                    const now = performance.now();
+                function clearPreviewTimer() {
+                    if (previewTimer) {
+                        window.clearTimeout(previewTimer);
+                        previewTimer = 0;
+                    }
+                }
 
-                    if ((now - tickCooldownByReel[boundedIndex]) < 32) {
+                function stopPreview() {
+                    clearPreviewTimer();
+                    spinPreviewAudio.pause();
+                    spinPreviewAudio.currentTime = 0;
+                }
+
+                function cancelSpinFade() {
+                    if (!spinFadeFrame) {
                         return;
                     }
 
-                    tickCooldownByReel[boundedIndex] = now;
-
-                    const synth = reelSynths[boundedIndex];
-                    const time = ToneLib.now();
-                    synth.tickNoise.triggerAttackRelease("64n", time, 0.12);
-                    synth.tickTone.triggerAttackRelease("G5", "64n", time, 0.08);
+                    window.cancelAnimationFrame(spinFadeFrame);
+                    spinFadeFrame = 0;
                 }
 
-                function playReelStop(reelIndex, isFinal) {
-                    const boundedIndex = clamp(Number(reelIndex) || 0, 0, reelPan.length - 1);
-                    const synth = reelSynths[boundedIndex];
+                function resetSpinLoopAudio() {
+                    cancelSpinFade();
+                    spinLoopAudio.pause();
+                    try {
+                        spinLoopAudio.currentTime = 0;
+                    } catch {}
+                    spinLoopAudio.volume = muted ? 0 : 0.88;
+                    spinLoopPlaying = false;
+                }
+
+                function fadeOutSpinLoop() {
+                    if (!spinLoopPlaying || spinLoopAudio.paused) {
+                        resetSpinLoopAudio();
+                        return;
+                    }
+
+                    cancelSpinFade();
+                    const startingVolume = spinLoopAudio.volume;
+                    const startedAt = performance.now();
+
+                    const tick = (now) => {
+                        const progress = clamp((now - startedAt) / 180, 0, 1);
+                        spinLoopAudio.volume = startingVolume * (1 - progress);
+
+                        if (progress < 1) {
+                            spinFadeFrame = window.requestAnimationFrame(tick);
+                            return;
+                        }
+
+                        spinFadeFrame = 0;
+                        resetSpinLoopAudio();
+                    };
+
+                    spinFadeFrame = window.requestAnimationFrame(tick);
+                }
+
+                function primeMediaElement(audioNode) {
+                    const previousMuted = audioNode.muted;
+                    audioNode.muted = true;
+
+                    return Promise.resolve(audioNode.play())
+                        .then(() => {
+                            audioNode.pause();
+                            audioNode.currentTime = 0;
+                            return true;
+                        })
+                        .catch(() => false)
+                        .finally(() => {
+                            audioNode.muted = previousMuted;
+                        });
+                }
+
+                function ensureMediaReady() {
+                    if (mediaPrimed) {
+                        return Promise.resolve(true);
+                    }
+
+                    return Promise.all([
+                        primeMediaElement(spinLoopAudio),
+                        primeMediaElement(spinPreviewAudio)
+                    ]).then((results) => {
+                        mediaPrimed = results.some(Boolean);
+                        return mediaPrimed;
+                    });
+                }
+
+                function safeResume() {
+                    const tonePromise = toneAvailable
+                        ? ToneLib.start()
+                            .then(() => getToneState() === "running")
+                            .catch(() => false)
+                        : Promise.resolve(false);
+
+                    return Promise.all([tonePromise, ensureMediaReady()])
+                        .then(([toneReady, mediaReady]) => toneReady || mediaReady);
+                }
+
+                function startSpinLoop() {
+                    stopPreview();
+                    cancelSpinFade();
+                    spinLoopAudio.pause();
+                    try {
+                        spinLoopAudio.currentTime = 0;
+                    } catch {}
+                    spinLoopAudio.volume = muted ? 0 : 0.88;
+
+                    return Promise.resolve(spinLoopAudio.play())
+                        .then(() => {
+                            spinLoopPlaying = true;
+                            return true;
+                        })
+                        .catch(() => {
+                            spinLoopPlaying = false;
+                            return false;
+                        });
+                }
+
+                function playSpinPreview() {
+                    if (muted) {
+                        return;
+                    }
+
+                    stopPreview();
+                    try {
+                        spinPreviewAudio.currentTime = 0.08;
+                    } catch {
+                        spinPreviewAudio.currentTime = 0;
+                    }
+                    spinPreviewAudio.volume = muted ? 0 : 0.76;
+                    Promise.resolve(spinPreviewAudio.play()).catch(() => {});
+                    previewTimer = window.setTimeout(() => {
+                        stopPreview();
+                    }, 620);
+                }
+
+                function playLeverPull() {
+                    if (!toneAvailable || getToneState() !== "running") {
+                        return;
+                    }
+
+                    const now = ToneLib.now();
+                    leverNoise.triggerAttackRelease("64n", now, 0.42);
+                    leverTone.triggerAttackRelease("C2", "16n", now, 0.72);
+                }
+
+                function playReelStop(isFinal) {
+                    if (!toneAvailable || getToneState() !== "running") {
+                        return;
+                    }
+
                     const time = ToneLib.now();
+                    stopNoise.triggerAttackRelease("64n", time, isFinal ? 0.25 : 0.18);
+                    stopTone.triggerAttackRelease(isFinal ? "C4" : "A3", "16n", time, isFinal ? 0.7 : 0.5);
 
-                    synth.stopNoise.triggerAttackRelease("32n", time, isFinal ? 0.24 : 0.16);
-                    synth.stopTone.triggerAttackRelease(isFinal ? "C4" : "A3", "16n", time, isFinal ? 0.7 : 0.48);
-
-                    if (isFinal) {
-                        finalAccent.triggerAttackRelease("E5", "8n", time + 0.03, 0.18);
+                    if (isFinal && finalAccent) {
+                        finalAccent.triggerAttackRelease("16n", time + 0.028, 0.2);
                     }
                 }
 
@@ -656,19 +785,23 @@
                     }
 
                     return safeResume().then(() => {
-                        if (muted || context.state !== "running") {
+                        if (muted) {
                             return;
                         }
 
                         switch (payload && payload.type) {
+                            case "spin-start":
+                                return startSpinLoop();
                             case "lever-pull":
                                 playLeverPull();
                                 break;
                             case "reel-tick":
-                                playReelTick(payload.reelIndex);
                                 break;
                             case "reel-stop":
-                                playReelStop(payload.reelIndex, Boolean(payload.isFinal));
+                                if (payload && payload.isFinal) {
+                                    fadeOutSpinLoop();
+                                }
+                                playReelStop(Boolean(payload && payload.isFinal));
                                 break;
                             default:
                                 break;
@@ -676,19 +809,110 @@
                     });
                 }
 
-                function setMuted(nextValue) {
-                    muted = Boolean(nextValue);
-                    masterGain.gain.value = muted ? 0 : 0.55;
+                function playUnlockPreview() {
+                    if (muted || unlockPreviewPlayed) {
+                        return;
+                    }
+
+                    unlockPreviewPlayed = true;
+                    playLeverPull();
+                    window.setTimeout(() => {
+                        if (!muted) {
+                            playSpinPreview();
+                        }
+                    }, 70);
                 }
 
-                window.addEventListener("pointerdown", safeResume, { once: true, passive: true });
-                window.addEventListener("keydown", safeResume, { once: true });
-                window.addEventListener("touchstart", safeResume, { once: true, passive: true });
+                function handleUnlockInteraction() {
+                    safeResume().then((started) => {
+                        if (started) {
+                            playUnlockPreview();
+                        }
+                    });
+                }
+
+                function setMuted(nextValue) {
+                    muted = Boolean(nextValue);
+                    spinLoopAudio.muted = muted;
+                    spinPreviewAudio.muted = muted;
+                    spinLoopAudio.volume = muted ? 0 : 0.88;
+                    spinPreviewAudio.volume = muted ? 0 : 0.76;
+
+                    if (muted) {
+                        stopPreview();
+                        resetSpinLoopAudio();
+                    }
+
+                    if (masterGain) {
+                        masterGain.gain.value = muted ? 0 : 0.78;
+                    }
+                }
+
+                window.addEventListener("pointerdown", handleUnlockInteraction, { once: true, passive: true });
+                window.addEventListener("keydown", handleUnlockInteraction, { once: true });
+                window.addEventListener("touchstart", handleUnlockInteraction, { once: true, passive: true });
 
                 return {
                     play,
                     resume: safeResume,
                     setMuted,
+                    stopSpin(immediate = true) {
+                        if (immediate) {
+                            resetSpinLoopAudio();
+                            return;
+                        }
+
+                        fadeOutSpinLoop();
+                    },
+                    testTick() {
+                        return safeResume().then((started) => {
+                            if (started && !muted) {
+                                playSpinPreview();
+                            }
+
+                            return started;
+                        });
+                    },
+                    testSpin() {
+                        return safeResume().then((started) => {
+                            if (started && !muted) {
+                                startSpinLoop();
+                                window.setTimeout(() => {
+                                    fadeOutSpinLoop();
+                                }, 1400);
+                            }
+
+                            return started;
+                        });
+                    },
+                    testLever() {
+                        return safeResume().then((started) => {
+                            if (started && !muted) {
+                                playLeverPull();
+                            }
+
+                            return started;
+                        });
+                    },
+                    testStop(reelIndex = 1, isFinal = true) {
+                        return safeResume().then((started) => {
+                            if (started && !muted) {
+                                playReelStop(isFinal);
+                            }
+
+                            return started;
+                        });
+                    },
+                    getStatus() {
+                        return {
+                            muted,
+                            state: getToneState(),
+                            unlocked: unlockPreviewPlayed,
+                            mediaPrimed,
+                            spinLoopPlaying,
+                            toneAvailable
+                        };
+                    },
                     get muted() {
                         return muted;
                     },
@@ -908,6 +1132,7 @@
                     setCurrentDigit(reel, numericDigit);
                 });
 
+                slotAudio.stopSpin(true);
                 setLeverPulled(false);
             }
 

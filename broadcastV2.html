@@ -349,6 +349,7 @@
         </div>
     </main>
 
+    <script src="./node_modules/tone/build/Tone.js"></script>
     <script>
         (function () {
             const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
@@ -359,10 +360,9 @@
             const REEL_CENTER_OFFSET = 22;
             const FRAME_WIDTH = 1920;
             const FRAME_HEIGHT = 1080;
-            const SPIN_VELOCITIES = [0.0115, 0.013, 0.0145];
-            const STOP_EXTRA_LOOPS = [4, 5, 6];
-            const STOP_DURATIONS = [820, 980, 1140];
-            const STOP_DELAYS = [880, 1380, 1940];
+            const SPIN_VELOCITIES = [0.00552, 0.00624, 0.00696];
+            const MIN_STOP_ROWS = 4;
+            const STOP_DELAYS = [2000, 4000, 6000];
             const shellNode = document.querySelector(".broadcast-shell");
             const canvasNode = document.querySelector(".broadcast-canvas");
             const leverHandleNode = document.querySelector(".machine-handle");
@@ -518,12 +518,190 @@
                 }
             }
 
-            function easeOutQuint(value) {
-                return 1 - Math.pow(1 - value, 5);
+            function createSlotAudio() {
+                const ToneLib = window.Tone;
+                const reelPan = [-0.42, 0, 0.42];
+
+                if (!ToneLib) {
+                    return {
+                        play() {},
+                        resume() {
+                            return Promise.resolve();
+                        },
+                        setMuted() {},
+                        get muted() {
+                            return false;
+                        }
+                    };
+                }
+
+                const limiter = new ToneLib.Limiter(-1).toDestination();
+                const masterGain = new ToneLib.Gain(0.55).connect(limiter);
+                const leverPanner = new ToneLib.Panner(0.52).connect(masterGain);
+                const tickCooldownByReel = [-Infinity, -Infinity, -Infinity];
+                const finalAccent = new ToneLib.Synth({
+                    oscillator: { type: "triangle" },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.12,
+                        sustain: 0,
+                        release: 0.06
+                    }
+                }).connect(masterGain);
+                const leverNoise = new ToneLib.NoiseSynth({
+                    noise: { type: "brown" },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.07,
+                        sustain: 0
+                    }
+                }).connect(leverPanner);
+                const leverTone = new ToneLib.MembraneSynth({
+                    pitchDecay: 0.03,
+                    octaves: 2.4,
+                    oscillator: { type: "triangle" },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.16,
+                        sustain: 0,
+                        release: 0.07
+                    }
+                }).connect(leverPanner);
+                const reelSynths = reelPan.map((panValue) => {
+                    const panner = new ToneLib.Panner(panValue).connect(masterGain);
+
+                    return {
+                        tickNoise: new ToneLib.NoiseSynth({
+                            noise: { type: "white" },
+                            envelope: {
+                                attack: 0.001,
+                                decay: 0.028,
+                                sustain: 0
+                            }
+                        }).connect(panner),
+                        tickTone: new ToneLib.Synth({
+                            oscillator: { type: "square" },
+                            envelope: {
+                                attack: 0.001,
+                                decay: 0.04,
+                                sustain: 0,
+                                release: 0.02
+                            }
+                        }).connect(panner),
+                        stopNoise: new ToneLib.NoiseSynth({
+                            noise: { type: "pink" },
+                            envelope: {
+                                attack: 0.001,
+                                decay: 0.05,
+                                sustain: 0
+                            }
+                        }).connect(panner),
+                        stopTone: new ToneLib.MembraneSynth({
+                            pitchDecay: 0.012,
+                            octaves: 1.8,
+                            oscillator: { type: "square" },
+                            envelope: {
+                                attack: 0.001,
+                                decay: 0.12,
+                                sustain: 0,
+                                release: 0.04
+                            }
+                        }).connect(panner)
+                    };
+                });
+                let muted = false;
+
+                function safeResume() {
+                    return ToneLib.start().catch(() => {});
+                }
+
+                function playLeverPull() {
+                    const now = ToneLib.now();
+                    leverNoise.triggerAttackRelease("32n", now, 0.4);
+                    leverTone.triggerAttackRelease("C2", "16n", now, 0.72);
+                }
+
+                function playReelTick(reelIndex) {
+                    const boundedIndex = clamp(Number(reelIndex) || 0, 0, reelPan.length - 1);
+                    const now = performance.now();
+
+                    if ((now - tickCooldownByReel[boundedIndex]) < 32) {
+                        return;
+                    }
+
+                    tickCooldownByReel[boundedIndex] = now;
+
+                    const synth = reelSynths[boundedIndex];
+                    const time = ToneLib.now();
+                    synth.tickNoise.triggerAttackRelease("64n", time, 0.12);
+                    synth.tickTone.triggerAttackRelease("G5", "64n", time, 0.08);
+                }
+
+                function playReelStop(reelIndex, isFinal) {
+                    const boundedIndex = clamp(Number(reelIndex) || 0, 0, reelPan.length - 1);
+                    const synth = reelSynths[boundedIndex];
+                    const time = ToneLib.now();
+
+                    synth.stopNoise.triggerAttackRelease("32n", time, isFinal ? 0.24 : 0.16);
+                    synth.stopTone.triggerAttackRelease(isFinal ? "C4" : "A3", "16n", time, isFinal ? 0.7 : 0.48);
+
+                    if (isFinal) {
+                        finalAccent.triggerAttackRelease("E5", "8n", time + 0.03, 0.18);
+                    }
+                }
+
+                function play(payload) {
+                    if (muted) {
+                        return Promise.resolve();
+                    }
+
+                    return safeResume().then(() => {
+                        if (muted || context.state !== "running") {
+                            return;
+                        }
+
+                        switch (payload && payload.type) {
+                            case "lever-pull":
+                                playLeverPull();
+                                break;
+                            case "reel-tick":
+                                playReelTick(payload.reelIndex);
+                                break;
+                            case "reel-stop":
+                                playReelStop(payload.reelIndex, Boolean(payload.isFinal));
+                                break;
+                            default:
+                                break;
+                        }
+                    });
+                }
+
+                function setMuted(nextValue) {
+                    muted = Boolean(nextValue);
+                    masterGain.gain.value = muted ? 0 : 0.55;
+                }
+
+                window.addEventListener("pointerdown", safeResume, { once: true, passive: true });
+                window.addEventListener("keydown", safeResume, { once: true });
+                window.addEventListener("touchstart", safeResume, { once: true, passive: true });
+
+                return {
+                    play,
+                    resume: safeResume,
+                    setMuted,
+                    get muted() {
+                        return muted;
+                    },
+                    library: ToneLib
+                };
             }
+
+            const slotAudio = createSlotAudio();
+            window.slotMachineAudio = slotAudio;
 
             function triggerSoundHook(type, detail) {
                 const payload = Object.assign({ type }, detail || {});
+                slotAudio.play(payload);
                 document.dispatchEvent(new CustomEvent("broadcast-slot-sound", { detail: payload }));
 
                 if (typeof window.onBroadcastSlotSound === "function") {
@@ -621,32 +799,33 @@
                 reel.animationToken += 1;
                 const token = reel.animationToken;
                 const startPosition = reel.position;
-                let endPosition = Math.ceil(startPosition / DIGIT_COUNT) * DIGIT_COUNT;
-                endPosition += STOP_EXTRA_LOOPS[reel.index] * DIGIT_COUNT;
-                endPosition += targetDigit;
+                let endPosition = Math.ceil(startPosition);
 
-                while (endPosition <= startPosition + 1) {
-                    endPosition += DIGIT_COUNT;
+                while (((endPosition % DIGIT_COUNT) + DIGIT_COUNT) % DIGIT_COUNT !== targetDigit) {
+                    endPosition += 1;
                 }
 
-                const duration = STOP_DURATIONS[reel.index];
-                const startedAt = performance.now();
+                while (endPosition <= startPosition + MIN_STOP_ROWS) {
+                    endPosition += DIGIT_COUNT;
+                }
+                reel.lastTimestamp = performance.now();
 
                 const tick = (now) => {
                     if (token !== reel.animationToken) {
                         return;
                     }
 
-                    const progress = clamp((now - startedAt) / duration, 0, 1);
-                    const nextPosition = startPosition + ((endPosition - startPosition) * easeOutQuint(progress));
-                    applyStripPosition(reel, nextPosition);
+                    const delta = clamp(now - reel.lastTimestamp, 0, 34);
+                    reel.lastTimestamp = now;
+                    const nextPosition = reel.position + (reel.velocity * delta);
 
-                    if (progress < 1) {
+                    if (nextPosition < endPosition) {
+                        applyStripPosition(reel, nextPosition);
                         reel.animationFrame = window.requestAnimationFrame(tick);
                         return;
                     }
 
-                    applyStripPosition(reel, endPosition);
+                    applyStripPosition(reel, endPosition, true);
                     setCurrentDigit(reel, targetDigit);
                     reel.element.classList.remove("is-spinning");
                     reel.animationFrame = 0;

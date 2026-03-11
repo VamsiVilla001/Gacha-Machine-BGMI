@@ -96,6 +96,30 @@
       },
       "lastResult": null,
       "pickedNumbers": []
+    },
+    "19d762f0-3163-45d6-93f1-b857387f9a04": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": null,
+      "pickedNumbers": []
+    },
+    "d47900f7-0681-4b2c-9d59-46bf4c26a4f8": {
+      "config": {
+        "resolution": "1920x1080",
+        "minNumber": 0,
+        "maxNumber": 999,
+        "selectionMode": "random",
+        "scriptedNumber": 777
+      },
+      "lastResult": 572,
+      "pickedNumbers": [
+        572
+      ]
     }
   }
 }

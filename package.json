@@ -19,6 +19,7 @@
   "homepage": "https://github.com/VamsiVilla001/Gacha-Machine-BGMI#readme",
   "description": "",
   "dependencies": {
+    "tone": "^15.1.22",
     "ws": "^8.19.0"
   }
 }

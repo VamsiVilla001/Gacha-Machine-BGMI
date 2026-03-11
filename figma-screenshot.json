@@ -1,1 +1,0 @@
-{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"get_screenshot","arguments":{"nodeId":"2077:1967","clientLanguages":"html,css,javascript","clientFrameworks":"unknown"}}}

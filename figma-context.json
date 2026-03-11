@@ -1,1 +1,0 @@
-{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_design_context","arguments":{"nodeId":"2077:1967","clientLanguages":"html,css,javascript","clientFrameworks":"unknown","dirForAssetWrites":"C:\\Users\\CG\\Downloads\\Gacha\\Gacha\\figma-assets","artifactType":"WEB_PAGE_OR_APP_SCREEN","taskType":"CHANGE_ARTIFACT"}}}

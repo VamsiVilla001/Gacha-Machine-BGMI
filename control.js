@@ -98,7 +98,7 @@ function buildWebSocketUrl() {
 }
 
 function getBroadcastUrl() {
-    const url = new URL("/broadcast.html", `${getHttpOrigin()}/`);
+    const url = new URL("/broadcastV2.html", `${getHttpOrigin()}/`);
     url.searchParams.set("room", controlState.roomId);
     return url.toString();
 }

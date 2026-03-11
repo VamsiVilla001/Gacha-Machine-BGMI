@@ -19,6 +19,10 @@
     <div id="workspace">
         <section id="broadcast-module">
             <div id="broadcast-canvas" data-resolution="1920x1080">
+                <div id="audio-control" class="audio-control is-hidden">
+                    <button type="button" id="audio-unlock-button" class="audio-unlock-button">Enable Sound</button>
+                    <div id="audio-status" class="audio-status">Audio locked by browser</div>
+                </div>
                 <div id="broadcast-content">
                     <div class="broadcast-rail broadcast-rail-left" aria-hidden="true">
                         <img src="figma-assets/05b44370ef5d6e9a77c659ea180270a30bebeb5a.svg" alt="">
@@ -34,7 +38,7 @@
                                 <div class="result-sidebar-ticket-inner">
                                     <div class="result-sidebar-glow" id="sidebar-result-accent" aria-hidden="true"></div>
                                     <div class="result-sidebar-number-frame">
-                                        <div id="sidebar-result-number" class="is-pending">---</div>
+                                        <div id="sidebar-result-number" class="is-pending">000</div>
                                         <div class="result-sidebar-overlay" aria-hidden="true">
                                             <div class="result-sidebar-overlay-top"></div>
                                             <div class="result-sidebar-overlay-bottom"></div>
@@ -500,7 +504,7 @@
             <path class="cls-5" d="M279.3,585.73c5.52-5.52,7.46-12.55,4.31-15.69s-10.17-1.21-15.69,4.31c-5.52,5.52-7.46,12.55-4.31,15.69,3.14,3.14,10.17,1.21,15.69-4.31Z"/>
           </g>
         </g> -->
-                        <g id="balls-container"></g>
+                        <g id="balls-container" class="cls-31"></g>
                         <svg x="38.35" y="47.68" width="655.9" height="655.9" viewBox="0 0 565.408 565.142"
                             fill="none" aria-hidden="true">
                             <g filter="url(#filter0_i_2077_3246)" style="mix-blend-mode:lighten">
@@ -601,7 +605,7 @@
         </section>
     </div>
     <output id="resolution-readout" hidden>1920 x 1080</output>
-    <script src="runtime-config.js"></script>
+    <script src="node_modules/tone/build/Tone.js"></script>
     <script src="script.js"></script>
 </body>
 

@@ -7,8 +7,15 @@ const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const ROOT = __dirname;
 const STORAGE_FILE = path.join(ROOT, "picked-history.json");
 const DEFAULT_ROOM_ID = "default";
+const MIN_TICKET_VALUE = 0;
+const MAX_TICKET_VALUE = 999;
+const MAX_HISTORY_ITEMS = 50;
 
 const rooms = new Map();
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
 
 function sanitizeRoomId(rawRoomId) {
     const roomId = String(rawRoomId || "")
@@ -28,10 +35,44 @@ function normalizeTicket(rawTicket) {
     return digits ? digits.padStart(3, "0") : null;
 }
 
+function formatTicketValue(value) {
+    return String(clamp(Number(value) || 0, MIN_TICKET_VALUE, MAX_TICKET_VALUE)).padStart(3, "0");
+}
+
+function normalizeMode(rawMode) {
+    return rawMode === "random" ? "random" : "scripted";
+}
+
+function normalizeRangeValue(rawValue, fallbackValue) {
+    const parsedValue = Number.parseInt(String(rawValue ?? ""), 10);
+    if (Number.isNaN(parsedValue)) {
+        return fallbackValue;
+    }
+
+    return clamp(parsedValue, MIN_TICKET_VALUE, MAX_TICKET_VALUE);
+}
+
+function normalizeSettings(rawSettings = {}) {
+    let min = normalizeRangeValue(rawSettings.min, MIN_TICKET_VALUE);
+    let max = normalizeRangeValue(rawSettings.max, MAX_TICKET_VALUE);
+
+    if (min > max) {
+        [min, max] = [max, min];
+    }
+
+    return {
+        mode: normalizeMode(rawSettings.mode),
+        min,
+        max
+    };
+}
+
 function createDefaultState() {
     return {
         lastTicket: null,
-        history: []
+        history: [],
+        usedTickets: [],
+        settings: normalizeSettings()
     };
 }
 
@@ -42,13 +83,22 @@ function normalizeRoomState(rawState = {}) {
         : Array.isArray(rawState.pickedNumbers)
             ? rawState.pickedNumbers
             : [];
+    const usedTicketsSource = Array.isArray(rawState.usedTickets)
+        ? rawState.usedTickets
+        : historySource;
 
     return {
         lastTicket,
         history: historySource
             .map((value) => normalizeTicket(value))
             .filter(Boolean)
-            .slice(0, 50)
+            .slice(0, MAX_HISTORY_ITEMS),
+        usedTickets: Array.from(new Set(
+            usedTicketsSource
+                .map((value) => normalizeTicket(value))
+                .filter(Boolean)
+        )),
+        settings: normalizeSettings(rawState.settings || rawState)
     };
 }
 
@@ -90,7 +140,9 @@ function saveStorage() {
     for (const [roomId, roomState] of rooms.entries()) {
         payload.rooms[roomId] = {
             lastTicket: roomState.lastTicket,
-            history: roomState.history
+            history: roomState.history,
+            usedTickets: roomState.usedTickets,
+            settings: roomState.settings
         };
     }
 
@@ -112,6 +164,8 @@ function getContentType(filePath) {
         ".png": "image/png",
         ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
+        ".mp3": "audio/mpeg",
+        ".otf": "font/otf",
         ".ai": "application/postscript"
     };
 
@@ -134,16 +188,95 @@ function broadcast(payload, predicate = () => true) {
     }
 }
 
-function broadcastState(roomId) {
+function countRemainingTickets(roomState) {
+    const usedTicketSet = new Set(roomState.usedTickets);
+    let remainingCount = 0;
+
+    for (let value = roomState.settings.min; value <= roomState.settings.max; value += 1) {
+        if (!usedTicketSet.has(formatTicketValue(value))) {
+            remainingCount += 1;
+        }
+    }
+
+    return remainingCount;
+}
+
+function buildStatePayload(roomId) {
     const state = getRoomState(roomId);
+
+    return {
+        roomId,
+        lastTicket: state.lastTicket,
+        history: state.history,
+        usedTickets: state.usedTickets,
+        settings: state.settings,
+        usedCount: state.usedTickets.length,
+        remainingCount: countRemainingTickets(state)
+    };
+}
+
+function broadcastState(roomId) {
     broadcast({
         event: "state",
-        data: {
-            roomId,
-            lastTicket: state.lastTicket,
-            history: state.history
-        }
+        data: buildStatePayload(roomId)
     }, (client) => client.roomId === roomId);
+}
+
+function recordTicket(roomState, ticket) {
+    roomState.lastTicket = ticket;
+    roomState.history.unshift(ticket);
+    roomState.history = roomState.history.slice(0, MAX_HISTORY_ITEMS);
+
+    if (!roomState.usedTickets.includes(ticket)) {
+        roomState.usedTickets.push(ticket);
+    }
+}
+
+function drawRandomTicket(roomState) {
+    const usedTicketSet = new Set(roomState.usedTickets);
+    const availableTickets = [];
+
+    for (let value = roomState.settings.min; value <= roomState.settings.max; value += 1) {
+        const ticket = formatTicketValue(value);
+        if (!usedTicketSet.has(ticket)) {
+            availableTickets.push(ticket);
+        }
+    }
+
+    if (availableTickets.length === 0) {
+        return null;
+    }
+
+    const selectedIndex = Math.floor(Math.random() * availableTickets.length);
+    return availableTickets[selectedIndex];
+}
+
+function resolveResultTicket(roomState, payload = {}) {
+    roomState.settings = normalizeSettings({
+        mode: payload.mode ?? roomState.settings.mode,
+        min: payload.min ?? roomState.settings.min,
+        max: payload.max ?? roomState.settings.max
+    });
+
+    if (roomState.settings.mode === "random") {
+        const ticket = drawRandomTicket(roomState);
+        if (!ticket) {
+            return {
+                error: `No tickets remaining between ${formatTicketValue(roomState.settings.min)} and ${formatTicketValue(roomState.settings.max)}. Clear pick memory or change the range.`
+            };
+        }
+
+        return { ticket };
+    }
+
+    const ticket = normalizeTicket(payload.ticket);
+    if (!ticket) {
+        return {
+            error: "A 3-digit ticket is required in scripted mode."
+        };
+    }
+
+    return { ticket };
 }
 
 const server = http.createServer((request, response) => {
@@ -177,14 +310,9 @@ wss.on("connection", (socket, request) => {
     socket.role = url.searchParams.get("role") || "unknown";
     socket.roomId = sanitizeRoomId(url.searchParams.get("room"));
 
-    const roomState = getRoomState(socket.roomId);
     sendJson(socket, {
         event: "state",
-        data: {
-            roomId: socket.roomId,
-            lastTicket: roomState.lastTicket,
-            history: roomState.history
-        }
+        data: buildStatePayload(socket.roomId)
     });
 
     socket.on("message", (rawMessage) => {
@@ -202,24 +330,23 @@ wss.on("connection", (socket, request) => {
         const activeRoomState = getRoomState(socket.roomId);
 
         if (message.event === "result") {
-            const ticket = normalizeTicket(message.data?.ticket);
+            const resolution = resolveResultTicket(activeRoomState, message.data || {});
 
-            if (!ticket) {
+            if (resolution.error) {
                 sendJson(socket, {
                     event: "error",
-                    data: { message: "A 3-digit ticket is required." }
+                    data: { message: resolution.error }
                 });
+                broadcastState(socket.roomId);
                 return;
             }
 
-            activeRoomState.lastTicket = ticket;
-            activeRoomState.history.unshift(ticket);
-            activeRoomState.history = activeRoomState.history.slice(0, 50);
+            recordTicket(activeRoomState, resolution.ticket);
             saveStorage();
 
             broadcast({
                 event: "result",
-                data: { ticket }
+                data: { ticket: resolution.ticket }
             }, (client) => client.role === "broadcast" && client.roomId === socket.roomId);
 
             broadcastState(socket.roomId);
@@ -229,6 +356,7 @@ wss.on("connection", (socket, request) => {
         if (message.event === "clear_history") {
             activeRoomState.lastTicket = null;
             activeRoomState.history = [];
+            activeRoomState.usedTickets = [];
             saveStorage();
             broadcastState(socket.roomId);
         }

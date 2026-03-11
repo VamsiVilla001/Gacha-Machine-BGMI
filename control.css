@@ -229,7 +229,8 @@ h1 {
 #result-mode-caption,
 #control-hint,
 #session-hint,
-#ticket-help {
+#ticket-help,
+#range-help {
     margin: 10px 0 0;
     color: #5e6978;
     font-size: 14px;
@@ -241,6 +242,12 @@ h1 {
     letter-spacing: 0.22em;
     text-align: center;
     font-variant-numeric: tabular-nums;
+}
+
+#ticket-input:disabled {
+    background: rgba(217, 223, 233, 0.8);
+    color: #6e7380;
+    box-shadow: none;
 }
 
 #pick-history-list {

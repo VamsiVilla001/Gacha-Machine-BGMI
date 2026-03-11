@@ -2,25 +2,57 @@
   "rooms": {
     "default": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "room-a": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "room-b": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "b09663de-4739-4b6a-8997-eb3ea8dced71": {
       "lastTicket": "123",
       "history": [
         "123"
-      ]
+      ],
+      "usedTickets": [
+        "123"
+      ],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "650dc292-8950-4057-beac-57cf7e520126": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "c6d9cf3d-c1a9-4b7b-aef5-adc483e00895": {
       "lastTicket": "205",
@@ -31,25 +63,150 @@
         "526",
         "885",
         "205"
-      ]
+      ],
+      "usedTickets": [
+        "574",
+        "980",
+        "572",
+        "526",
+        "885",
+        "205"
+      ],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "7c724606-7528-4a78-8b1e-5b717a1ff826": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "122d7bb9-f24b-49e0-ad29-6afef4a0ba2a": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "19d762f0-3163-45d6-93f1-b857387f9a04": {
       "lastTicket": null,
-      "history": []
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
     },
     "d47900f7-0681-4b2c-9d59-46bf4c26a4f8": {
-      "lastTicket": "572",
+      "lastTicket": "232",
       "history": [
+        "232",
+        "776",
         "572"
-      ]
+      ],
+      "usedTickets": [
+        "572",
+        "776",
+        "232"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "itest-1773247422293": {
+      "lastTicket": "120",
+      "history": [
+        "120"
+      ],
+      "usedTickets": [
+        "120"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 120,
+        "max": 120
+      }
+    },
+    "0edb2114-ca93-44e6-acd9-b8d8fccb3bba": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "b28459a6-68a2-49b4-bc2e-193ca16cecd2": {
+      "lastTicket": "104",
+      "history": [
+        "104",
+        "210",
+        "067"
+      ],
+      "usedTickets": [
+        "067",
+        "210",
+        "104"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 555
+      }
+    },
+    "780dd0cc-9db7-4448-95b0-323f37a88d34": {
+      "lastTicket": "539",
+      "history": [
+        "539",
+        "210",
+        "445"
+      ],
+      "usedTickets": [
+        "445",
+        "210",
+        "539"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "93c4e812-415d-4a58-8846-3c99329e92b8": {
+      "lastTicket": "150",
+      "history": [
+        "150",
+        "161",
+        "208",
+        "260",
+        "714"
+      ],
+      "usedTickets": [
+        "714",
+        "260",
+        "208",
+        "161",
+        "150"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 260
+      }
     }
   }
 }

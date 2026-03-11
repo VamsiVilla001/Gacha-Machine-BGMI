@@ -41,12 +41,30 @@
             </section>
 
             <section class="panel-card">
-                <h2>Send Ticket</h2>
-                <label class="field">
-                    <span>Winning Ticket</span>
+                <h2>Draw Setup</h2>
+                <div class="field">
+                    <span>Mode</span>
+                    <div class="toggle-group">
+                        <button type="button" id="mode-scripted-button" class="toggle-button is-active" aria-pressed="true">Scripted</button>
+                        <button type="button" id="mode-random-button" class="toggle-button" aria-pressed="false">Random</button>
+                    </div>
+                </div>
+                <div class="field-grid field-stacked">
+                    <label class="field">
+                        <span>Min Ticket</span>
+                        <input id="range-min-input" type="text" inputmode="numeric" maxlength="3" placeholder="000" autocomplete="off">
+                    </label>
+                    <label class="field">
+                        <span>Max Ticket</span>
+                        <input id="range-max-input" type="text" inputmode="numeric" maxlength="3" placeholder="999" autocomplete="off">
+                    </label>
+                </div>
+                <label class="field field-stacked">
+                    <span>Scripted Ticket</span>
                     <input id="ticket-input" type="text" inputmode="numeric" maxlength="3" placeholder="781" autocomplete="off">
                 </label>
                 <p id="ticket-help">Enter any 3-digit value and send it to the room. The broadcast reels will spin to that ticket.</p>
+                <p id="range-help">Random mode draws a unique ticket from the active range and stores it in persistent pick memory.</p>
             </section>
 
             <section class="panel-card panel-card-result">
@@ -65,8 +83,8 @@
 
         <section class="panel-card panel-card-action">
             <button type="button" id="send-result-button" class="knob-toggle-button">Send Result</button>
-            <button type="button" id="clear-history-button" class="secondary-action-button">Clear History</button>
-            <p id="control-hint">This panel emits a `result` event to the selected room and the broadcast page spins the slot reels.</p>
+            <button type="button" id="clear-history-button" class="secondary-action-button">Clear Pick Memory</button>
+            <p id="control-hint">This panel sends a draw request to the selected room. The broadcast page spins only when a control result is emitted.</p>
         </section>
     </main>
 

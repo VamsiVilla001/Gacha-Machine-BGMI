@@ -118,26 +118,26 @@
 
         .rail__dots {
             position: absolute;
-            width: 24px;
+            width: 28px;
         }
 
         .rail--left .rail__dots {
-            left: 16px;
+            left: 14px;
             top: -65.5px;
             height: 1264px;
         }
 
         .rail--right .rail__dots {
-            left: 16px;
+            left: 14px;
             top: 14.5px;
             height: 1104px;
         }
 
         .glow {
-            left: 400.162px;
-            top: 333px;
-            width: 1112.322px;
-            height: 491px;
+            left: 162px;
+            top: 98px;
+            width: 1593px;
+            height: 950px;
             mix-blend-mode: plus-lighter;
         }
 
@@ -230,8 +230,10 @@
             width: 217px;
             height: 353px;
             overflow: hidden;
+            isolation: isolate;
             --digit-left: 25;
-            --spin-step: 200;
+            --digit-width: 160px;
+            --spin-step: 220;
         }
 
         .reel--1 {
@@ -249,54 +251,23 @@
             --digit-left: 33;
         }
 
-        .reel-static,
-        .reel-spin {
+        .reel::before,
+        .reel::after {
+            content: "";
             position: absolute;
             inset: 0;
+            pointer-events: none;
         }
 
-        .reel-static {
-            opacity: 1;
-            transition: opacity 120ms linear;
+        .reel::before {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.58) 38%, rgba(255, 255, 255, 0) 100%);
+            mix-blend-mode: screen;
+            z-index: 3;
         }
 
-        .reel-spin {
-            opacity: 0;
-            transition: opacity 120ms linear;
-            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.92) 10%, #000 26%, #000 74%, rgba(0, 0, 0, 0.92) 90%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.92) 10%, #000 26%, #000 74%, rgba(0, 0, 0, 0.92) 90%, transparent 100%);
-        }
-
-        .reel.is-spinning .reel-static {
-            opacity: 0;
-        }
-
-        .reel.is-spinning .reel-spin {
-            opacity: 1;
-        }
-
-        .reel-current,
-        .reel-digit {
-            position: absolute;
-            left: calc(var(--digit-left) * 1px);
-            width: 160px;
-            margin: 0;
-            font-family: "Industry Broadcast", sans-serif;
-            text-align: center;
-            line-height: 0.934;
-            paint-order: stroke fill;
-        }
-
-        .reel-preview {
-            display: none;
-        }
-
-        .reel-current {
-            top: 85px;
-            color: #240700;
-            font-size: 260px;
-            letter-spacing: 5.2px;
-            -webkit-text-stroke: 6px rgba(255, 255, 255, 0.92);
+        .reel::after {
+            background: linear-gradient(180deg, rgba(36, 7, 0, 0.5) 0%, rgba(36, 7, 0, 0) 50%, rgba(36, 7, 0, 0.5) 100%);
+            z-index: 2;
         }
 
         .reel-strip {
@@ -305,21 +276,35 @@
             top: 0;
             width: 100%;
             will-change: transform;
-            transform: translate3d(0, 85px, 0);
+            z-index: 1;
         }
 
         .reel-digit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: var(--digit-width);
             height: calc(var(--spin-step) * 1px);
-            color: #7e554b;
-            font-size: 240px;
-            letter-spacing: 4.8px;
-            opacity: 0.88;
-            -webkit-text-stroke: 4px #d8cabf;
+            margin: 0 0 0 calc(var(--digit-left) * 1px);
+            color: #240700;
+            text-align: center;
+            leading-trim: both;
+            text-edge: cap;
+            -webkit-text-stroke-width: 4px;
+            -webkit-text-stroke-color: #fff;
+            font-family: "Industry Broadcast", "Industry", sans-serif;
+            font-size: 260px;
+            font-style: normal;
+            font-weight: 700;
+            line-height: 93.4%;
+            letter-spacing: 5.2px;
+            text-transform: uppercase;
+            paint-order: stroke fill;
         }
 
         .reel-digit span {
             display: block;
-            transform: translateY(-18px);
+            transform: translateY(25px);
         }
     </style>
 </head>
@@ -345,36 +330,15 @@
 
         <section class="reels" aria-label="Winning ticket digits">
             <div class="reel reel--1" data-reel-index="0" aria-label="Hundreds digit">
-                <div class="reel-spin" aria-hidden="true">
-                    <div class="reel-strip"></div>
-                </div>
-                <div class="reel-static">
-                    <p class="reel-preview reel-preview--top">0</p>
-                    <p class="reel-current">0</p>
-                    <p class="reel-preview reel-preview--bottom">0</p>
-                </div>
+                <div class="reel-strip" aria-hidden="true"></div>
             </div>
 
             <div class="reel reel--2" data-reel-index="1" aria-label="Tens digit">
-                <div class="reel-spin" aria-hidden="true">
-                    <div class="reel-strip"></div>
-                </div>
-                <div class="reel-static">
-                    <p class="reel-preview reel-preview--top">0</p>
-                    <p class="reel-current">0</p>
-                    <p class="reel-preview reel-preview--bottom">0</p>
-                </div>
+                <div class="reel-strip" aria-hidden="true"></div>
             </div>
 
             <div class="reel reel--3" data-reel-index="2" aria-label="Ones digit">
-                <div class="reel-spin" aria-hidden="true">
-                    <div class="reel-strip"></div>
-                </div>
-                <div class="reel-static">
-                    <p class="reel-preview reel-preview--top">0</p>
-                    <p class="reel-current">0</p>
-                    <p class="reel-preview reel-preview--bottom">0</p>
-                </div>
+                <div class="reel-strip" aria-hidden="true"></div>
             </div>
         </section>
 
@@ -390,8 +354,9 @@
             const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
             const DIGIT_COUNT = DIGITS.length;
             const REPEAT_COUNT = 12;
-            const SPIN_STEP = 200;
+            const SPIN_STEP = 220;
             const INITIAL_POSITION = 40;
+            const REEL_CENTER_OFFSET = 92;
             const FRAME_WIDTH = 1920;
             const FRAME_HEIGHT = 1080;
             const SPIN_VELOCITIES = [0.0115, 0.013, 0.0145];
@@ -413,15 +378,13 @@
                 index,
                 element,
                 strip: element.querySelector(".reel-strip"),
-                topPreview: element.querySelector(".reel-preview--top"),
-                currentNode: element.querySelector(".reel-current"),
-                bottomPreview: element.querySelector(".reel-preview--bottom"),
                 position: INITIAL_POSITION,
                 currentDigit: 0,
                 velocity: SPIN_VELOCITIES[index],
                 continuousFrame: 0,
                 animationFrame: 0,
                 lastTimestamp: 0,
+                lastTickIndex: Math.floor(INITIAL_POSITION),
                 timers: [],
                 animationToken: 0
             }));
@@ -431,7 +394,7 @@
                 lastTicket: "000",
                 sequenceId: 0,
                 leverTimer: 0,
-                demoMode: (window.location.protocol === "file:" && !previewTicket) || demoEnabled,
+                demoMode: demoEnabled,
                 demoTicketIndex: 0,
                 demoTimer: 0,
                 liveMode: Boolean(previewTicket)
@@ -484,9 +447,8 @@
                 return digits ? digits.padStart(3, "0") : null;
             }
 
-            function updateStaticDigits(reel, digit) {
+            function setCurrentDigit(reel, digit) {
                 reel.currentDigit = digit;
-                reel.currentNode.textContent = DIGITS[digit];
             }
 
             function populateStrips() {
@@ -502,16 +464,30 @@
                         });
                     }
 
-                    applyStripPosition(reel, reel.position);
-                    updateStaticDigits(reel, 0);
+                    applyStripPosition(reel, reel.position, true);
+                    setCurrentDigit(reel, 0);
                 });
             }
 
-            function applyStripPosition(reel, position) {
+            function applyStripPosition(reel, position, suppressTick) {
                 const totalRows = DIGIT_COUNT * REPEAT_COUNT;
                 const normalized = ((position % totalRows) + totalRows) % totalRows;
                 reel.position = position;
-                reel.strip.style.transform = `translate3d(0, ${85 - (normalized * SPIN_STEP)}px, 0)`;
+                reel.strip.style.transform = `translate3d(0, ${REEL_CENTER_OFFSET - (normalized * SPIN_STEP)}px, 0)`;
+
+                const tickIndex = Math.floor(normalized);
+                if (suppressTick) {
+                    reel.lastTickIndex = tickIndex;
+                    return;
+                }
+
+                if (tickIndex !== reel.lastTickIndex) {
+                    reel.lastTickIndex = tickIndex;
+                    triggerSoundHook("reel-tick", {
+                        reelIndex: reel.index,
+                        digit: tickIndex % DIGIT_COUNT
+                    });
+                }
             }
 
             function resizeFrame() {
@@ -617,6 +593,7 @@
                 reel.animationToken += 1;
                 reel.lastTimestamp = performance.now();
                 reel.element.classList.add("is-spinning");
+                reel.lastTickIndex = Math.floor(reel.position);
                 triggerSoundHook("reel-spin-start", { reelIndex: reel.index });
 
                 const tick = (now) => {
@@ -670,10 +647,14 @@
                     }
 
                     applyStripPosition(reel, endPosition);
-                    updateStaticDigits(reel, targetDigit);
+                    setCurrentDigit(reel, targetDigit);
                     reel.element.classList.remove("is-spinning");
                     reel.animationFrame = 0;
-                    triggerSoundHook("reel-stop", { reelIndex, digit: targetDigit });
+                    triggerSoundHook("reel-stop", {
+                        reelIndex,
+                        digit: targetDigit,
+                        isFinal: reelIndex === (reelState.length - 1)
+                    });
                 };
 
                 reel.animationFrame = window.requestAnimationFrame(tick);
@@ -744,8 +725,8 @@
 
                     const numericDigit = Number(digit);
                     const settledPosition = INITIAL_POSITION + numericDigit;
-                    applyStripPosition(reel, settledPosition);
-                    updateStaticDigits(reel, numericDigit);
+                    applyStripPosition(reel, settledPosition, true);
+                    setCurrentDigit(reel, numericDigit);
                 });
 
                 setLeverPulled(false);

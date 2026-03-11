@@ -228,11 +228,19 @@ h1 {
 
 #result-mode-caption,
 #control-hint,
-#session-hint {
+#session-hint,
+#ticket-help {
     margin: 10px 0 0;
     color: #5e6978;
     font-size: 14px;
     line-height: 1.5;
+}
+
+#ticket-input {
+    font-size: 56px;
+    letter-spacing: 0.22em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
 }
 
 #pick-history-list {

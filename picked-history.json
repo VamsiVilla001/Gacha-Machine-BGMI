@@ -1,124 +1,54 @@
 {
   "rooms": {
     "default": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "room-a": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "scripted",
-        "scriptedNumber": 123
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "room-b": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "b09663de-4739-4b6a-8997-eb3ea8dced71": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": 123,
-      "pickedNumbers": [
-        123
+      "lastTicket": "123",
+      "history": [
+        "123"
       ]
     },
     "650dc292-8950-4057-beac-57cf7e520126": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "c6d9cf3d-c1a9-4b7b-aef5-adc483e00895": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": 205,
-      "pickedNumbers": [
-        574,
-        980,
-        572,
-        526,
-        885,
-        205
+      "lastTicket": "205",
+      "history": [
+        "574",
+        "980",
+        "572",
+        "526",
+        "885",
+        "205"
       ]
     },
     "7c724606-7528-4a78-8b1e-5b717a1ff826": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "122d7bb9-f24b-49e0-ad29-6afef4a0ba2a": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 77
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "19d762f0-3163-45d6-93f1-b857387f9a04": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": null,
-      "pickedNumbers": []
+      "lastTicket": null,
+      "history": []
     },
     "d47900f7-0681-4b2c-9d59-46bf4c26a4f8": {
-      "config": {
-        "resolution": "1920x1080",
-        "minNumber": 0,
-        "maxNumber": 999,
-        "selectionMode": "random",
-        "scriptedNumber": 777
-      },
-      "lastResult": 572,
-      "pickedNumbers": [
-        572
+      "lastTicket": "572",
+      "history": [
+        "572"
       ]
     }
   }

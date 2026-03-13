@@ -4,7 +4,6 @@
   "main": "socket-server.js",
   "scripts": {
     "build:slot-sync-assets": "python scripts/generate_slot_machine_synced_assets.py",
-    "build:slot-sequence": "python scripts/generate_slot_machine_sequence_sfx.py",
     "start": "node socket-server.js",
     "generate:sfx:elevenlabs": "python scripts/generate_elevenlabs_slot_sfx.py",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,7 +21,6 @@
   "homepage": "https://github.com/VamsiVilla001/Gacha-Machine-BGMI#readme",
   "description": "",
   "dependencies": {
-    "tone": "^15.1.22",
     "ws": "^8.19.0"
   }
 }

@@ -314,6 +314,7 @@
             transform: translateX(-50%);
             width: min(calc(100vw - 32px), 520px);
             z-index: 20;
+            opacity: 0;
             pointer-events: none;
         }
 
@@ -357,6 +358,7 @@
             padding: 0 16px;
             border: 0;
             border-radius: 999px;
+            opacity: 0;
             cursor: pointer;
             font-family: "Countach Broadcast Bold", sans-serif;
             font-size: 13px;
@@ -444,7 +446,7 @@
 
     <section class="sound-prompt" id="sound-prompt" hidden aria-hidden="true" aria-live="polite">
         <div class="sound-prompt__panel" role="status">
-            <p class="sound-prompt__copy" id="sound-prompt-copy">Sound is locked. Click Enable Sound or wait for external audio enable.</p>
+            <p class="sound-prompt__copy" id="sound-prompt-copy">Audio unlocks on the first click, key press, or touch.</p>
             <div class="sound-prompt__actions">
                 <button class="sound-prompt__button sound-prompt__button--primary" id="enable-sound-button" type="button">Enable Sound</button>
             </div>
@@ -623,35 +625,44 @@
             }
 
             function createSlotAudio() {
-                const spinLoopAudio = new Audio("./assets/audio/slot-machine-spin-bed.mp3");
-                const spinPreviewAudio = new Audio("./assets/audio/slot-machine-lever-pull.mp3");
-                const reelStopAudio = new Audio("./assets/audio/slot-machine-reel-stop.mp3");
-                const finalStopAudio = new Audio("./assets/audio/slot-machine-final-stop-win.mp3");
+                const cues = {
+                    spin: {
+                        audio: new Audio("./assets/audio/slot-machine-spin-bed.mp3"),
+                        volume: 0.88
+                    },
+                    lever: {
+                        audio: new Audio("./assets/audio/lever.mp3"),
+                        volume: 0.92
+                    },
+                    stop: {
+                        audio: new Audio("./assets/audio/numberstop.mp3"),
+                        volume: 0.94
+                    },
+                    final: {
+                        audio: new Audio("./assets/audio/final.mp3"),
+                        volume: 0.96
+                    }
+                };
+                const allCues = Object.values(cues);
                 let muted = false;
                 let mediaPrimed = false;
-                let unlockPreviewPlayed = false;
-                let previewTimer = 0;
-                let spinFadeFrame = 0;
                 let spinLoopPlaying = false;
                 let spinLoopStartPromise = null;
                 let unlockPromise = null;
                 let audioUnlocked = false;
 
-                spinLoopAudio.preload = "auto";
-                spinLoopAudio.loop = false;
-                spinLoopAudio.volume = 0.88;
-                spinPreviewAudio.preload = "auto";
-                spinPreviewAudio.loop = false;
-                spinPreviewAudio.volume = 0.82;
-                reelStopAudio.preload = "auto";
-                reelStopAudio.loop = false;
-                reelStopAudio.volume = 0.9;
-                finalStopAudio.preload = "auto";
-                finalStopAudio.loop = false;
-                finalStopAudio.volume = 0.94;
+                allCues.forEach((cue) => {
+                    cue.audio.preload = "auto";
+                    cue.audio.loop = false;
+                    cue.audio.volume = cue.volume;
+                });
 
-                function getToneState() {
-                    return mediaPrimed ? "media-ready" : "awaiting-unlock";
+                function getAudioState() {
+                    if (muted) {
+                        return "muted";
+                    }
+
+                    return audioUnlocked ? "armed" : "awaiting-user-gesture";
                 }
 
                 function dispatchAudioState() {
@@ -661,144 +672,52 @@
                             unlocked: audioUnlocked,
                             mediaPrimed,
                             spinLoopPlaying,
-                            state: getToneState()
+                            state: getAudioState()
                         }
                     }));
                 }
 
-                function clearPreviewTimer() {
-                    if (previewTimer) {
-                        window.clearTimeout(previewTimer);
-                        previewTimer = 0;
-                    }
-                }
-
-                function stopPreview() {
-                    clearPreviewTimer();
-                    spinPreviewAudio.pause();
-                    spinPreviewAudio.currentTime = 0;
-                }
-
-                function playOneShot(audioNode, volume) {
-                    if (muted) {
-                        return Promise.resolve(false);
-                    }
-
-                    audioNode.pause();
+                function resetCue(cue) {
+                    cue.audio.pause();
                     try {
-                        audioNode.currentTime = 0;
+                        cue.audio.currentTime = 0;
                     } catch {}
-                    audioNode.volume = muted ? 0 : volume;
-
-                    return Promise.resolve(audioNode.play())
-                        .then(() => true)
-                        .catch(() => false);
+                    cue.audio.muted = muted;
+                    cue.audio.volume = muted ? 0 : cue.volume;
                 }
 
-                function cancelSpinFade() {
-                    if (!spinFadeFrame) {
-                        return;
-                    }
-
-                    window.cancelAnimationFrame(spinFadeFrame);
-                    spinFadeFrame = 0;
-                }
-
-                function resetSpinLoopAudio() {
-                    cancelSpinFade();
-                    spinLoopAudio.pause();
-                    try {
-                        spinLoopAudio.currentTime = 0;
-                    } catch {}
-                    spinLoopAudio.volume = muted ? 0 : 0.88;
-                    spinLoopPlaying = false;
-                }
-
-                function fadeOutSpinLoop() {
-                    if (!spinLoopPlaying || spinLoopAudio.paused || !spinLoopAudio.loop) {
-                        resetSpinLoopAudio();
-                        return;
-                    }
-
-                    cancelSpinFade();
-                    const startingVolume = spinLoopAudio.volume;
-                    const startedAt = performance.now();
-
-                    const tick = (now) => {
-                        const progress = clamp((now - startedAt) / 180, 0, 1);
-                        spinLoopAudio.volume = startingVolume * (1 - progress);
-
-                        if (progress < 1) {
-                            spinFadeFrame = window.requestAnimationFrame(tick);
-                            return;
-                        }
-
-                        spinFadeFrame = 0;
-                        resetSpinLoopAudio();
-                    };
-
-                    spinFadeFrame = window.requestAnimationFrame(tick);
-                }
-
-                function primeMediaElement(audioNode) {
-                    const previousMuted = audioNode.muted;
-                    audioNode.muted = true;
-
-                    return Promise.resolve(audioNode.play())
-                        .then(() => {
-                            audioNode.pause();
-                            audioNode.currentTime = 0;
-                            return true;
-                        })
-                        .catch(() => false)
-                        .finally(() => {
-                            audioNode.muted = previousMuted;
-                        });
-                }
-
-                function ensureMediaReady() {
-                    if (mediaPrimed) {
-                        return Promise.resolve(true);
-                    }
-
-                    return Promise.all([
-                        primeMediaElement(spinLoopAudio),
-                        primeMediaElement(spinPreviewAudio),
-                        primeMediaElement(reelStopAudio),
-                        primeMediaElement(finalStopAudio)
-                    ]).then((results) => {
-                        mediaPrimed = results.some(Boolean);
-                        dispatchAudioState();
-                        return mediaPrimed;
+                function syncCueLevels() {
+                    allCues.forEach((cue) => {
+                        cue.audio.muted = muted;
+                        cue.audio.volume = muted ? 0 : cue.volume;
                     });
                 }
 
-                function safeResume() {
-                    return ensureMediaReady();
+                function resetSpinSequence() {
+                    resetCue(cues.spin);
+                    spinLoopPlaying = false;
                 }
 
-                function startSpinLoop() {
-                    stopPreview();
-                    cancelSpinFade();
+                function startSpinSequence() {
+                    if (muted || !audioUnlocked) {
+                        return Promise.resolve(false);
+                    }
 
                     if (spinLoopStartPromise) {
                         return spinLoopStartPromise;
                     }
 
-                    spinLoopAudio.pause();
-                    try {
-                        spinLoopAudio.currentTime = 0;
-                    } catch {}
-                    spinLoopAudio.volume = muted ? 0 : 0.88;
+                    resetCue(cues.spin);
+                    syncCueLevels();
 
-                    spinLoopStartPromise = Promise.resolve(spinLoopAudio.play())
+                    spinLoopStartPromise = Promise.resolve(cues.spin.audio.play())
                         .then(() => {
                             spinLoopPlaying = true;
                             const handleEnded = () => {
                                 spinLoopPlaying = false;
-                                spinLoopAudio.removeEventListener("ended", handleEnded);
+                                cues.spin.audio.removeEventListener("ended", handleEnded);
                             };
-                            spinLoopAudio.addEventListener("ended", handleEnded);
+                            cues.spin.audio.addEventListener("ended", handleEnded, { once: true });
                             return true;
                         })
                         .catch(() => {
@@ -812,82 +731,85 @@
                     return spinLoopStartPromise;
                 }
 
-                function playSpinPreview() {
-                    if (muted) {
-                        return;
+                function playOneShot(cue) {
+                    if (muted || !audioUnlocked) {
+                        return Promise.resolve(false);
                     }
 
-                    stopPreview();
-                    spinPreviewAudio.currentTime = 0;
-                    spinPreviewAudio.volume = muted ? 0 : 0.82;
-                    Promise.resolve(spinPreviewAudio.play()).catch(() => {});
-                    previewTimer = window.setTimeout(() => {
-                        stopPreview();
-                    }, 900);
+                    resetCue(cue);
+                    syncCueLevels();
+                    return Promise.resolve(cue.audio.play())
+                        .then(() => true)
+                        .catch(() => false);
                 }
 
                 function play(payload) {
                     if (muted) {
-                        return Promise.resolve();
+                        return Promise.resolve(false);
                     }
 
                     const type = payload && payload.type;
-                    return safeResume().then((started) => {
-                        if (muted || !started) {
-                            return;
-                        }
-
-                        if (!audioUnlocked) {
-                            audioUnlocked = true;
-                            dispatchAudioState();
-                        }
-
-                        switch (type) {
-                            case "spin-start":
-                                return startSpinLoop();
-                            case "lever-pull":
-                                return playOneShot(spinPreviewAudio, 0.82);
-                            case "reel-stop":
-                                if (payload && payload.isFinal) {
-                                    fadeOutSpinLoop();
-                                    return playOneShot(finalStopAudio, 0.94);
-                                }
-                                return playOneShot(reelStopAudio, 0.9);
-                            default:
-                                return;
-                        }
-                    });
-                }
-
-                function playUnlockPreview() {
-                    if (muted || unlockPreviewPlayed) {
-                        return;
-                    }
-
-                    unlockPreviewPlayed = true;
-                    if (!muted) {
-                        playSpinPreview();
+                    switch (type) {
+                        case "spin-start":
+                            return startSpinSequence();
+                        case "lever-pull":
+                            return playOneShot(cues.lever);
+                        case "reel-stop":
+                            if (payload && payload.isFinal) {
+                                resetSpinSequence();
+                                return playOneShot(cues.final);
+                            }
+                            return playOneShot(cues.stop);
+                        default:
+                            return Promise.resolve(audioUnlocked);
                     }
                 }
 
-                function unlock(shouldPreview = true) {
+                function unlock() {
+                    if (audioUnlocked) {
+                        return Promise.resolve(true);
+                    }
+
                     if (unlockPromise) {
                         return unlockPromise;
                     }
 
-                    unlockPromise = safeResume()
-                        .then((started) => {
-                            if (started) {
-                                audioUnlocked = true;
-                                if (shouldPreview) {
-                                    playUnlockPreview();
-                                }
-                            }
+                    allCues.forEach((cue) => {
+                        resetCue(cue);
+                        cue.audio.muted = true;
+                        cue.audio.volume = 0;
+                    });
 
+                    unlockPromise = Promise.all(allCues.map((cue) => {
+                        return Promise.resolve(cue.audio.play())
+                            .then(() => {
+                                cue.audio.pause();
+                                try {
+                                    cue.audio.currentTime = 0;
+                                } catch {}
+                                return true;
+                            })
+                            .catch(() => false);
+                    }))
+                        .then((results) => {
+                            const unlocked = results.some(Boolean);
+                            audioUnlocked = unlocked;
+                            mediaPrimed = unlocked;
+                            syncCueLevels();
                             dispatchAudioState();
-                            return started;
+                            return unlocked;
+                        })
+                        .catch(() => {
+                            audioUnlocked = false;
+                            mediaPrimed = false;
+                            syncCueLevels();
+                            dispatchAudioState();
+                            return false;
                         })
                         .finally(() => {
+                            allCues.forEach((cue) => {
+                                resetCue(cue);
+                            });
                             unlockPromise = null;
                         });
 
@@ -895,83 +817,54 @@
                 }
 
                 function handleUnlockInteraction() {
-                    unlock(true);
+                    unlock();
                 }
 
                 function setMuted(nextValue) {
                     muted = Boolean(nextValue);
-                    spinLoopAudio.muted = muted;
-                    spinPreviewAudio.muted = muted;
-                    reelStopAudio.muted = muted;
-                    finalStopAudio.muted = muted;
-                    spinLoopAudio.volume = muted ? 0 : 0.88;
-                    spinPreviewAudio.volume = muted ? 0 : 0.82;
-                    reelStopAudio.volume = muted ? 0 : 0.9;
-                    finalStopAudio.volume = muted ? 0 : 0.94;
+                    syncCueLevels();
 
                     if (muted) {
-                        stopPreview();
-                        resetSpinLoopAudio();
-                        reelStopAudio.pause();
-                        finalStopAudio.pause();
+                        allCues.forEach((cue) => {
+                            resetCue(cue);
+                        });
+                        spinLoopPlaying = false;
                     }
 
                     dispatchAudioState();
                 }
 
-                window.addEventListener("pointerdown", handleUnlockInteraction, { once: true, passive: true });
-                window.addEventListener("keydown", handleUnlockInteraction, { once: true });
-                window.addEventListener("touchstart", handleUnlockInteraction, { once: true, passive: true });
+                ["click", "keydown", "touchstart", "pointerdown"].forEach((eventName) => {
+                    document.addEventListener(eventName, handleUnlockInteraction, { once: true });
+                });
 
                 return {
                     play,
-                    resume: safeResume,
+                    resume: () => Promise.resolve(audioUnlocked),
                     unlock,
                     setMuted,
-                    stopSpin(immediate = true) {
-                        if (immediate) {
-                            resetSpinLoopAudio();
-                            return;
-                        }
-
-                        fadeOutSpinLoop();
+                    stopSpin() {
+                        allCues.forEach((cue) => {
+                            resetCue(cue);
+                        });
+                        spinLoopPlaying = false;
                     },
                     testTick() {
-                        return safeResume().then((started) => {
-                            if (started && !muted) {
-                                playSpinPreview();
-                            }
-
-                            return started;
-                        });
+                        return playOneShot(cues.stop);
                     },
                     testSpin() {
-                        return safeResume().then((started) => {
-                            if (started && !muted) {
-                                startSpinLoop();
-                            }
-
-                            return started;
-                        });
+                        return startSpinSequence();
                     },
                     testLever() {
-                        return safeResume().then((started) => {
-                            if (started && !muted) {
-                                playSpinPreview();
-                            }
-
-                            return started;
-                        });
+                        return playOneShot(cues.lever);
                     },
-                    testStop(reelIndex = 1, isFinal = true) {
-                        return safeResume().then((started) => {
-                            return started;
-                        });
+                    testStop() {
+                        return playOneShot(cues.final);
                     },
                     getStatus() {
                         return {
                             muted,
-                            state: getToneState(),
+                            state: getAudioState(),
                             unlocked: audioUnlocked,
                             mediaPrimed,
                             spinLoopPlaying
@@ -1003,10 +896,6 @@
             window.setBroadcastAudioEnabled = (enabled, options) => broadcastAudioApi.setEnabled(Boolean(enabled), options);
             window.getBroadcastAudioStatus = () => broadcastAudioApi.getStatus();
 
-            let soundPromptTimer = 0;
-            let soundPromptResolved = false;
-            let externalAutoEnableRequested = false;
-
             function setSoundPromptVisible(nextValue) {
                 if (!soundPromptNode) {
                     return;
@@ -1024,82 +913,37 @@
                 soundPromptCopy.textContent = nextMessage;
             }
 
-            function clearSoundPromptTimer() {
-                if (soundPromptTimer) {
-                    window.clearTimeout(soundPromptTimer);
-                    soundPromptTimer = 0;
-                }
-            }
-
-            function resolveSoundPrompt() {
-                soundPromptResolved = true;
-                clearSoundPromptTimer();
-                setSoundPromptVisible(false);
-            }
-
-            function scheduleSoundPrompt() {
-                clearSoundPromptTimer();
-                const status = slotAudio.getStatus();
-
+            function syncSoundPrompt(status = slotAudio.getStatus()) {
                 if (status.unlocked || status.muted) {
-                    resolveSoundPrompt();
+                    setSoundPromptVisible(false);
                     return;
                 }
 
-                setSoundPromptMessage("Sound is locked. Click Enable Sound or wait for external audio enable.");
+                setSoundPromptMessage("Audio unlocks on the first click, key press, or touch.");
                 setSoundPromptVisible(true);
-                soundPromptTimer = window.setTimeout(() => {
-                    if (soundPromptResolved || externalAutoEnableRequested) {
-                        return;
-                    }
-
-                    externalAutoEnableRequested = true;
-                    setSoundPromptMessage("Trying external audio enable...");
-
-                    if (typeof window.onBroadcastAudioEnableRequest !== "function") {
-                        setSoundPromptMessage("External audio enable unavailable. Click Enable Sound.");
-                        return;
-                    }
-
-                    Promise.resolve(window.onBroadcastAudioEnableRequest(true, broadcastAudioApi))
-                        .then(() => {
-                            const nextStatus = slotAudio.getStatus();
-                            if (!nextStatus.unlocked && !nextStatus.muted) {
-                                setSoundPromptMessage("Audio is still locked. Click Enable Sound.");
-                            }
-                        })
-                        .catch(() => {
-                            setSoundPromptMessage("External audio enable failed. Click Enable Sound.");
-                        });
-                }, 2000);
             }
 
             function handleAudioStateChange(event) {
                 const status = event.detail || slotAudio.getStatus();
-                if (status.unlocked || status.muted) {
-                    resolveSoundPrompt();
-                    return;
-                }
-
-                setSoundPromptVisible(true);
+                syncSoundPrompt(status);
             }
 
             if (enableSoundButton) {
                 enableSoundButton.addEventListener("click", () => {
-                    broadcastAudioApi.setEnabled(true, { preview: true }).then((started) => {
+                    broadcastAudioApi.setEnabled(true, { preview: false }).then((started) => {
                         if (started) {
-                            resolveSoundPrompt();
+                            syncSoundPrompt(slotAudio.getStatus());
                             return;
                         }
 
-                        setSoundPromptMessage("Audio is still locked. Try again from a direct click.");
+                        setSoundPromptMessage("Browser blocked audio. Click once directly on this page.");
                         setSoundPromptVisible(true);
                     });
                 });
             }
 
             window.addEventListener("broadcast-slot-audio-state", handleAudioStateChange);
-            scheduleSoundPrompt();
+            syncSoundPrompt(slotAudio.getStatus());
 
             function triggerSoundHook(type, detail) {
                 const payload = Object.assign({ type }, detail || {});

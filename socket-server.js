@@ -40,7 +40,7 @@ function formatTicketValue(value) {
 }
 
 function normalizeMode(rawMode) {
-    return rawMode === "random" ? "random" : "scripted";
+    return rawMode === "scripted" ? "scripted" : "random";
 }
 
 function normalizeRangeValue(rawValue, fallbackValue) {

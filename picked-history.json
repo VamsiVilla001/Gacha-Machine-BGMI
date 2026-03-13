@@ -293,14 +293,72 @@
       }
     },
     "6e42fa44-eda5-49ec-8123-088f781cbdb4": {
-      "lastTicket": "366",
+      "lastTicket": "867",
       "history": [
+        "867",
+        "408",
         "366",
         "264"
       ],
       "usedTickets": [
         "264",
-        "366"
+        "366",
+        "408",
+        "867"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "3d6be8ea-9e34-488f-9f4a-b6eeb8be033c": {
+      "lastTicket": "391",
+      "history": [
+        "391",
+        "109",
+        "390"
+      ],
+      "usedTickets": [
+        "390",
+        "109",
+        "391"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "d83e93f9-036f-4576-87c6-1d7b342816eb": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "1190c677-d9d8-47bd-8fda-f93a56c99d34": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "ac438f3f-7936-40b4-8514-ccc8140af3b7": {
+      "lastTicket": "285",
+      "history": [
+        "285",
+        "069"
+      ],
+      "usedTickets": [
+        "069",
+        "285"
       ],
       "settings": {
         "mode": "random",

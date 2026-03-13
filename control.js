@@ -24,7 +24,7 @@ const FALLBACK_HTTP_ORIGIN = "http://127.0.0.1:3000";
 const FALLBACK_WS_ORIGIN = "ws://127.0.0.1:3000";
 const MIN_TICKET_VALUE = 0;
 const MAX_TICKET_VALUE = 999;
-const DEFAULT_MODE = "scripted";
+const DEFAULT_MODE = "random";
 
 const controlState = {
     roomId: "",
@@ -59,7 +59,7 @@ function normalizeTicket(rawTicket) {
 }
 
 function normalizeMode(rawMode) {
-    return rawMode === "random" ? "random" : "scripted";
+    return rawMode === "scripted" ? "scripted" : "random";
 }
 
 function normalizeRangeValue(rawValue, fallbackValue) {

@@ -306,6 +306,99 @@
             display: block;
             transform: translateY(25px);
         }
+
+        .sound-prompt {
+            position: fixed;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(calc(100vw - 32px), 520px);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .sound-prompt[hidden] {
+            display: none;
+        }
+
+        .sound-prompt__panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            width: 100%;
+            min-height: 60px;
+            padding: 12px 14px 12px 18px;
+            border: 1px solid rgba(230, 189, 18, 0.52);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(24, 5, 72, 0.94) 0%, rgba(11, 2, 37, 0.96) 100%);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+            backdrop-filter: blur(14px);
+            pointer-events: auto;
+        }
+
+        .sound-prompt__copy {
+            margin: 0;
+            flex: 1 1 auto;
+            color: rgba(255, 255, 255, 0.86);
+            font-family: "Countach Broadcast", sans-serif;
+            font-size: 15px;
+            line-height: 1.25;
+        }
+
+        .sound-prompt__actions {
+            display: flex;
+            flex: 0 0 auto;
+            gap: 10px;
+        }
+
+        .sound-prompt__button {
+            min-height: 36px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 999px;
+            cursor: pointer;
+            font-family: "Countach Broadcast Bold", sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            transition: transform 140ms ease, opacity 140ms ease, box-shadow 140ms ease;
+        }
+
+        .sound-prompt__button:hover {
+            transform: translateY(-1px);
+        }
+
+        .sound-prompt__button:active {
+            transform: translateY(0);
+        }
+
+        .sound-prompt__button--primary {
+            color: #1d0a00;
+            background: linear-gradient(180deg, #ffd84c 0%, #e6bd12 100%);
+            box-shadow: 0 14px 30px rgba(230, 189, 18, 0.3);
+        }
+
+        .sound-prompt__button--secondary {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        @media (max-width: 720px) {
+            .sound-prompt__panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sound-prompt__actions {
+                width: 100%;
+            }
+
+            .sound-prompt__button {
+                flex: 1 1 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -349,7 +442,15 @@
         </div>
     </main>
 
-    <script src="./node_modules/tone/build/Tone.js"></script>
+    <section class="sound-prompt" id="sound-prompt" hidden aria-hidden="true" aria-live="polite">
+        <div class="sound-prompt__panel" role="status">
+            <p class="sound-prompt__copy" id="sound-prompt-copy">Sound is locked. Click Enable Sound or wait for external audio enable.</p>
+            <div class="sound-prompt__actions">
+                <button class="sound-prompt__button sound-prompt__button--primary" id="enable-sound-button" type="button">Enable Sound</button>
+            </div>
+        </div>
+    </section>
+
     <script>
         (function () {
             const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
@@ -368,6 +469,9 @@
             const leverHandleNode = document.querySelector(".machine-handle");
             const roomIdNode = document.getElementById("room-id");
             const connectionStatusNode = document.getElementById("connection-status");
+            const soundPromptNode = document.getElementById("sound-prompt");
+            const soundPromptCopy = document.getElementById("sound-prompt-copy");
+            const enableSoundButton = document.getElementById("enable-sound-button");
             const previewTicket = getPreviewTicket();
             const demoEnabled = new URL(window.location.href).searchParams.get("demo") === "1";
             const DEMO_TICKETS = ["284", "631", "907", "145"];
@@ -519,103 +623,47 @@
             }
 
             function createSlotAudio() {
-                const ToneLib = window.Tone;
-                const toneAvailable = Boolean(ToneLib);
-                const spinLoopAudio = new Audio("./assets/audio/slot.mp3");
-                const spinPreviewAudio = new Audio("./assets/audio/slot.mp3");
+                const spinLoopAudio = new Audio("./assets/audio/slot-machine-spin-bed.mp3");
+                const spinPreviewAudio = new Audio("./assets/audio/slot-machine-lever-pull.mp3");
+                const reelStopAudio = new Audio("./assets/audio/slot-machine-reel-stop.mp3");
+                const finalStopAudio = new Audio("./assets/audio/slot-machine-final-stop-win.mp3");
                 let muted = false;
                 let mediaPrimed = false;
                 let unlockPreviewPlayed = false;
                 let previewTimer = 0;
                 let spinFadeFrame = 0;
                 let spinLoopPlaying = false;
-                let masterGain = null;
-                let leverNoise = null;
-                let leverTone = null;
-                let stopNoise = null;
-                let stopTone = null;
-                let finalAccent = null;
+                let spinLoopStartPromise = null;
+                let unlockPromise = null;
+                let audioUnlocked = false;
 
                 spinLoopAudio.preload = "auto";
-                spinLoopAudio.loop = true;
+                spinLoopAudio.loop = false;
                 spinLoopAudio.volume = 0.88;
                 spinPreviewAudio.preload = "auto";
                 spinPreviewAudio.loop = false;
-                spinPreviewAudio.volume = 0.76;
-
-                if (toneAvailable) {
-                    const limiter = new ToneLib.Limiter(-1).toDestination();
-                    masterGain = new ToneLib.Gain(0.78).connect(limiter);
-                    const leverPanner = new ToneLib.Panner(0.52).connect(masterGain);
-                    const stopPanner = new ToneLib.Panner(0.08).connect(masterGain);
-
-                    leverNoise = new ToneLib.NoiseSynth({
-                        noise: { type: "pink" },
-                        envelope: {
-                            attack: 0.001,
-                            decay: 0.045,
-                            sustain: 0
-                        }
-                    }).connect(leverPanner);
-                    leverTone = new ToneLib.MembraneSynth({
-                        pitchDecay: 0.022,
-                        octaves: 2.1,
-                        oscillator: { type: "sine" },
-                        envelope: {
-                            attack: 0.001,
-                            decay: 0.14,
-                            sustain: 0,
-                            release: 0.07
-                        }
-                    }).connect(leverPanner);
-                    stopNoise = new ToneLib.NoiseSynth({
-                        noise: { type: "pink" },
-                        envelope: {
-                            attack: 0.001,
-                            decay: 0.045,
-                            sustain: 0,
-                            release: 0.015
-                        }
-                    }).connect(stopPanner);
-                    stopTone = new ToneLib.MembraneSynth({
-                        pitchDecay: 0.014,
-                        octaves: 1.65,
-                        oscillator: { type: "square" },
-                        envelope: {
-                            attack: 0.001,
-                            decay: 0.09,
-                            sustain: 0,
-                            release: 0.04
-                        }
-                    }).connect(stopPanner);
-                    finalAccent = new ToneLib.MetalSynth({
-                        frequency: 410,
-                        envelope: {
-                            attack: 0.001,
-                            decay: 0.16,
-                            release: 0.06
-                        },
-                        harmonicity: 5.1,
-                        modulationIndex: 18,
-                        resonance: 2600,
-                        octaves: 1.4
-                    }).connect(masterGain);
-                }
+                spinPreviewAudio.volume = 0.82;
+                reelStopAudio.preload = "auto";
+                reelStopAudio.loop = false;
+                reelStopAudio.volume = 0.9;
+                finalStopAudio.preload = "auto";
+                finalStopAudio.loop = false;
+                finalStopAudio.volume = 0.94;
 
                 function getToneState() {
-                    if (!toneAvailable) {
-                        return "unavailable";
-                    }
+                    return mediaPrimed ? "media-ready" : "awaiting-unlock";
+                }
 
-                    if (typeof ToneLib.getContext === "function") {
-                        return ToneLib.getContext().state;
-                    }
-
-                    if (ToneLib.context && typeof ToneLib.context.state === "string") {
-                        return ToneLib.context.state;
-                    }
-
-                    return "running";
+                function dispatchAudioState() {
+                    window.dispatchEvent(new CustomEvent("broadcast-slot-audio-state", {
+                        detail: {
+                            muted,
+                            unlocked: audioUnlocked,
+                            mediaPrimed,
+                            spinLoopPlaying,
+                            state: getToneState()
+                        }
+                    }));
                 }
 
                 function clearPreviewTimer() {
@@ -629,6 +677,22 @@
                     clearPreviewTimer();
                     spinPreviewAudio.pause();
                     spinPreviewAudio.currentTime = 0;
+                }
+
+                function playOneShot(audioNode, volume) {
+                    if (muted) {
+                        return Promise.resolve(false);
+                    }
+
+                    audioNode.pause();
+                    try {
+                        audioNode.currentTime = 0;
+                    } catch {}
+                    audioNode.volume = muted ? 0 : volume;
+
+                    return Promise.resolve(audioNode.play())
+                        .then(() => true)
+                        .catch(() => false);
                 }
 
                 function cancelSpinFade() {
@@ -651,7 +715,7 @@
                 }
 
                 function fadeOutSpinLoop() {
-                    if (!spinLoopPlaying || spinLoopAudio.paused) {
+                    if (!spinLoopPlaying || spinLoopAudio.paused || !spinLoopAudio.loop) {
                         resetSpinLoopAudio();
                         return;
                     }
@@ -699,42 +763,53 @@
 
                     return Promise.all([
                         primeMediaElement(spinLoopAudio),
-                        primeMediaElement(spinPreviewAudio)
+                        primeMediaElement(spinPreviewAudio),
+                        primeMediaElement(reelStopAudio),
+                        primeMediaElement(finalStopAudio)
                     ]).then((results) => {
                         mediaPrimed = results.some(Boolean);
+                        dispatchAudioState();
                         return mediaPrimed;
                     });
                 }
 
                 function safeResume() {
-                    const tonePromise = toneAvailable
-                        ? ToneLib.start()
-                            .then(() => getToneState() === "running")
-                            .catch(() => false)
-                        : Promise.resolve(false);
-
-                    return Promise.all([tonePromise, ensureMediaReady()])
-                        .then(([toneReady, mediaReady]) => toneReady || mediaReady);
+                    return ensureMediaReady();
                 }
 
                 function startSpinLoop() {
                     stopPreview();
                     cancelSpinFade();
+
+                    if (spinLoopStartPromise) {
+                        return spinLoopStartPromise;
+                    }
+
                     spinLoopAudio.pause();
                     try {
                         spinLoopAudio.currentTime = 0;
                     } catch {}
                     spinLoopAudio.volume = muted ? 0 : 0.88;
 
-                    return Promise.resolve(spinLoopAudio.play())
+                    spinLoopStartPromise = Promise.resolve(spinLoopAudio.play())
                         .then(() => {
                             spinLoopPlaying = true;
+                            const handleEnded = () => {
+                                spinLoopPlaying = false;
+                                spinLoopAudio.removeEventListener("ended", handleEnded);
+                            };
+                            spinLoopAudio.addEventListener("ended", handleEnded);
                             return true;
                         })
                         .catch(() => {
                             spinLoopPlaying = false;
                             return false;
+                        })
+                        .finally(() => {
+                            spinLoopStartPromise = null;
                         });
+
+                    return spinLoopStartPromise;
                 }
 
                 function playSpinPreview() {
@@ -743,40 +818,12 @@
                     }
 
                     stopPreview();
-                    try {
-                        spinPreviewAudio.currentTime = 0.08;
-                    } catch {
-                        spinPreviewAudio.currentTime = 0;
-                    }
-                    spinPreviewAudio.volume = muted ? 0 : 0.76;
+                    spinPreviewAudio.currentTime = 0;
+                    spinPreviewAudio.volume = muted ? 0 : 0.82;
                     Promise.resolve(spinPreviewAudio.play()).catch(() => {});
                     previewTimer = window.setTimeout(() => {
                         stopPreview();
-                    }, 620);
-                }
-
-                function playLeverPull() {
-                    if (!toneAvailable || getToneState() !== "running") {
-                        return;
-                    }
-
-                    const now = ToneLib.now();
-                    leverNoise.triggerAttackRelease("64n", now, 0.42);
-                    leverTone.triggerAttackRelease("C2", "16n", now, 0.72);
-                }
-
-                function playReelStop(isFinal) {
-                    if (!toneAvailable || getToneState() !== "running") {
-                        return;
-                    }
-
-                    const time = ToneLib.now();
-                    stopNoise.triggerAttackRelease("64n", time, isFinal ? 0.25 : 0.18);
-                    stopTone.triggerAttackRelease(isFinal ? "C4" : "A3", "16n", time, isFinal ? 0.7 : 0.5);
-
-                    if (isFinal && finalAccent) {
-                        finalAccent.triggerAttackRelease("16n", time + 0.028, 0.2);
-                    }
+                    }, 900);
                 }
 
                 function play(payload) {
@@ -784,27 +831,30 @@
                         return Promise.resolve();
                     }
 
-                    return safeResume().then(() => {
-                        if (muted) {
+                    const type = payload && payload.type;
+                    return safeResume().then((started) => {
+                        if (muted || !started) {
                             return;
                         }
 
-                        switch (payload && payload.type) {
+                        if (!audioUnlocked) {
+                            audioUnlocked = true;
+                            dispatchAudioState();
+                        }
+
+                        switch (type) {
                             case "spin-start":
                                 return startSpinLoop();
                             case "lever-pull":
-                                playLeverPull();
-                                break;
-                            case "reel-tick":
-                                break;
+                                return playOneShot(spinPreviewAudio, 0.82);
                             case "reel-stop":
                                 if (payload && payload.isFinal) {
                                     fadeOutSpinLoop();
+                                    return playOneShot(finalStopAudio, 0.94);
                                 }
-                                playReelStop(Boolean(payload && payload.isFinal));
-                                break;
+                                return playOneShot(reelStopAudio, 0.9);
                             default:
-                                break;
+                                return;
                         }
                     });
                 }
@@ -815,37 +865,58 @@
                     }
 
                     unlockPreviewPlayed = true;
-                    playLeverPull();
-                    window.setTimeout(() => {
-                        if (!muted) {
-                            playSpinPreview();
-                        }
-                    }, 70);
+                    if (!muted) {
+                        playSpinPreview();
+                    }
+                }
+
+                function unlock(shouldPreview = true) {
+                    if (unlockPromise) {
+                        return unlockPromise;
+                    }
+
+                    unlockPromise = safeResume()
+                        .then((started) => {
+                            if (started) {
+                                audioUnlocked = true;
+                                if (shouldPreview) {
+                                    playUnlockPreview();
+                                }
+                            }
+
+                            dispatchAudioState();
+                            return started;
+                        })
+                        .finally(() => {
+                            unlockPromise = null;
+                        });
+
+                    return unlockPromise;
                 }
 
                 function handleUnlockInteraction() {
-                    safeResume().then((started) => {
-                        if (started) {
-                            playUnlockPreview();
-                        }
-                    });
+                    unlock(true);
                 }
 
                 function setMuted(nextValue) {
                     muted = Boolean(nextValue);
                     spinLoopAudio.muted = muted;
                     spinPreviewAudio.muted = muted;
+                    reelStopAudio.muted = muted;
+                    finalStopAudio.muted = muted;
                     spinLoopAudio.volume = muted ? 0 : 0.88;
-                    spinPreviewAudio.volume = muted ? 0 : 0.76;
+                    spinPreviewAudio.volume = muted ? 0 : 0.82;
+                    reelStopAudio.volume = muted ? 0 : 0.9;
+                    finalStopAudio.volume = muted ? 0 : 0.94;
 
                     if (muted) {
                         stopPreview();
                         resetSpinLoopAudio();
+                        reelStopAudio.pause();
+                        finalStopAudio.pause();
                     }
 
-                    if (masterGain) {
-                        masterGain.gain.value = muted ? 0 : 0.78;
-                    }
+                    dispatchAudioState();
                 }
 
                 window.addEventListener("pointerdown", handleUnlockInteraction, { once: true, passive: true });
@@ -855,6 +926,7 @@
                 return {
                     play,
                     resume: safeResume,
+                    unlock,
                     setMuted,
                     stopSpin(immediate = true) {
                         if (immediate) {
@@ -877,9 +949,6 @@
                         return safeResume().then((started) => {
                             if (started && !muted) {
                                 startSpinLoop();
-                                window.setTimeout(() => {
-                                    fadeOutSpinLoop();
-                                }, 1400);
                             }
 
                             return started;
@@ -888,7 +957,7 @@
                     testLever() {
                         return safeResume().then((started) => {
                             if (started && !muted) {
-                                playLeverPull();
+                                playSpinPreview();
                             }
 
                             return started;
@@ -896,10 +965,6 @@
                     },
                     testStop(reelIndex = 1, isFinal = true) {
                         return safeResume().then((started) => {
-                            if (started && !muted) {
-                                playReelStop(isFinal);
-                            }
-
                             return started;
                         });
                     },
@@ -907,21 +972,134 @@
                         return {
                             muted,
                             state: getToneState(),
-                            unlocked: unlockPreviewPlayed,
+                            unlocked: audioUnlocked,
                             mediaPrimed,
-                            spinLoopPlaying,
-                            toneAvailable
+                            spinLoopPlaying
                         };
                     },
                     get muted() {
                         return muted;
                     },
-                    library: ToneLib
+                    library: null
                 };
             }
 
             const slotAudio = createSlotAudio();
             window.slotMachineAudio = slotAudio;
+            const broadcastAudioApi = {
+                setEnabled(enabled, options = {}) {
+                    if (!enabled) {
+                        slotAudio.setMuted(true);
+                        return Promise.resolve(false);
+                    }
+
+                    slotAudio.setMuted(false);
+                    return slotAudio.unlock(options.preview !== false);
+                },
+                getStatus() {
+                    return slotAudio.getStatus();
+                }
+            };
+            window.setBroadcastAudioEnabled = (enabled, options) => broadcastAudioApi.setEnabled(Boolean(enabled), options);
+            window.getBroadcastAudioStatus = () => broadcastAudioApi.getStatus();
+
+            let soundPromptTimer = 0;
+            let soundPromptResolved = false;
+            let externalAutoEnableRequested = false;
+
+            function setSoundPromptVisible(nextValue) {
+                if (!soundPromptNode) {
+                    return;
+                }
+
+                soundPromptNode.hidden = !nextValue;
+                soundPromptNode.setAttribute("aria-hidden", String(!nextValue));
+            }
+
+            function setSoundPromptMessage(nextMessage) {
+                if (!soundPromptCopy) {
+                    return;
+                }
+
+                soundPromptCopy.textContent = nextMessage;
+            }
+
+            function clearSoundPromptTimer() {
+                if (soundPromptTimer) {
+                    window.clearTimeout(soundPromptTimer);
+                    soundPromptTimer = 0;
+                }
+            }
+
+            function resolveSoundPrompt() {
+                soundPromptResolved = true;
+                clearSoundPromptTimer();
+                setSoundPromptVisible(false);
+            }
+
+            function scheduleSoundPrompt() {
+                clearSoundPromptTimer();
+                const status = slotAudio.getStatus();
+
+                if (status.unlocked || status.muted) {
+                    resolveSoundPrompt();
+                    return;
+                }
+
+                setSoundPromptMessage("Sound is locked. Click Enable Sound or wait for external audio enable.");
+                setSoundPromptVisible(true);
+                soundPromptTimer = window.setTimeout(() => {
+                    if (soundPromptResolved || externalAutoEnableRequested) {
+                        return;
+                    }
+
+                    externalAutoEnableRequested = true;
+                    setSoundPromptMessage("Trying external audio enable...");
+
+                    if (typeof window.onBroadcastAudioEnableRequest !== "function") {
+                        setSoundPromptMessage("External audio enable unavailable. Click Enable Sound.");
+                        return;
+                    }
+
+                    Promise.resolve(window.onBroadcastAudioEnableRequest(true, broadcastAudioApi))
+                        .then(() => {
+                            const nextStatus = slotAudio.getStatus();
+                            if (!nextStatus.unlocked && !nextStatus.muted) {
+                                setSoundPromptMessage("Audio is still locked. Click Enable Sound.");
+                            }
+                        })
+                        .catch(() => {
+                            setSoundPromptMessage("External audio enable failed. Click Enable Sound.");
+                        });
+                }, 2000);
+            }
+
+            function handleAudioStateChange(event) {
+                const status = event.detail || slotAudio.getStatus();
+                if (status.unlocked || status.muted) {
+                    resolveSoundPrompt();
+                    return;
+                }
+
+                setSoundPromptVisible(true);
+            }
+
+            if (enableSoundButton) {
+                enableSoundButton.addEventListener("click", () => {
+                    broadcastAudioApi.setEnabled(true, { preview: true }).then((started) => {
+                        if (started) {
+                            resolveSoundPrompt();
+                            return;
+                        }
+
+                        setSoundPromptMessage("Audio is still locked. Try again from a direct click.");
+                        setSoundPromptVisible(true);
+                    });
+                });
+            }
+
+            window.addEventListener("broadcast-slot-audio-state", handleAudioStateChange);
+            scheduleSoundPrompt();
 
             function triggerSoundHook(type, detail) {
                 const payload = Object.assign({ type }, detail || {});

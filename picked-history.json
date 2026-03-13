@@ -215,6 +215,98 @@
         "min": 0,
         "max": 260
       }
+    },
+    "9ddf47c8-985c-4fe5-b288-8634de7b2482": {
+      "lastTicket": "031",
+      "history": [
+        "031"
+      ],
+      "usedTickets": [
+        "031"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "34ae755d-6dc9-4e3a-90f4-c7ce715204c0": {
+      "lastTicket": "890",
+      "history": [
+        "890",
+        "606",
+        "759",
+        "133",
+        "821",
+        "477",
+        "106"
+      ],
+      "usedTickets": [
+        "106",
+        "477",
+        "821",
+        "133",
+        "759",
+        "606",
+        "890"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "0a55fc2c-929e-40be-9506-faab36328458": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "b45d76c8-047a-41f4-ba7e-9bef5434f2df": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "settings": {
+        "mode": "scripted",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "5af216f8-ca7c-4139-b7b1-2ba0151ccbc1": {
+      "lastTicket": "056",
+      "history": [
+        "056",
+        "513"
+      ],
+      "usedTickets": [
+        "513",
+        "056"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "6e42fa44-eda5-49ec-8123-088f781cbdb4": {
+      "lastTicket": "366",
+      "history": [
+        "366",
+        "264"
+      ],
+      "usedTickets": [
+        "264",
+        "366"
+      ],
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
     }
   }
 }

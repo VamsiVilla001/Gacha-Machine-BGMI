@@ -165,6 +165,7 @@ function getContentType(filePath) {
         ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
         ".mp3": "audio/mpeg",
+        ".wav": "audio/wav",
         ".otf": "font/otf",
         ".ai": "application/postscript"
     };

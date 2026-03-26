@@ -28,6 +28,14 @@
             font-weight: 700;
             font-display: block;
         }
+        
+        @font-face {
+            font-family: "Industry Broadcast";
+            src: url("./assets/fonts/IndustryTest-Medium.otf") format("opentype");
+            font-style: normal;
+            font-weight: 500;
+            font-display: block;
+        }
 
         :root {
             color-scheme: dark;
@@ -182,35 +190,63 @@
             z-index: 8;
         }
 
-        .broadcast-title,
-        .broadcast-label {
+        .header {
             position: absolute;
+            left: 116px;
+            top: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            z-index: 8;
+        }
+
+        .broadcast-title,
+        .broadcast-subtitle,
+        .broadcast-label {
             margin: 0;
-            line-height: 0.934;
-            text-transform: uppercase;
             white-space: nowrap;
         }
 
         .broadcast-title {
-            left: 116px;
-            top: 83px;
-            width: 726px;
             color: #ffffff;
             font-family: "Countach Broadcast Bold", sans-serif;
             font-size: 140px;
+            line-height: 0.934;
             letter-spacing: 2.8px;
-            z-index: 8;
+            text-transform: uppercase;
+        }
+
+        .broadcast-subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            leading-trim: both;
+            text-edge: cap;
+            font-family: "Industry Broadcast", "Industry", sans-serif;
+            font-size: 40px;
+            font-style: normal;
+            font-weight: 500;
+            line-height: 100%;
+            text-transform: uppercase;
+            opacity: 1;
+            /* transition: opacity 320ms ease; */
+        }
+
+        .broadcast-subtitle.is-visible {
+            opacity: 1;
         }
 
         .broadcast-label {
+            position: absolute;
             left: 597px;
             top: 946px;
             width: 726px;
             color: #e6bd12;
             font-family: "Countach Broadcast", sans-serif;
             font-size: 72px;
+            line-height: 0.934;
             letter-spacing: 1.44px;
             text-align: center;
+            text-transform: uppercase;
             z-index: 8;
         }
 
@@ -420,7 +456,10 @@
         <img class="machine-svg machine-base" src="./assets/svg/slot-machine-base-exact.svg" alt="" aria-hidden="true">
         <img class="layer logo" src="./assets/svg/broadcast-v2-logo.svg" alt="BGIS 2026 logo">
 
-        <h1 class="broadcast-title">GIVEAWAY</h1>
+        <div class="header">
+            <div class="broadcast-title">GIVEAWAY</div>
+            <div class="broadcast-subtitle"></div>
+        </div>
         <p class="broadcast-label">Winning Ticket</p>
 
         <section class="reels" aria-label="Winning ticket digits">
@@ -471,6 +510,7 @@
             const leverHandleNode = document.querySelector(".machine-handle");
             const roomIdNode = document.getElementById("room-id");
             const connectionStatusNode = document.getElementById("connection-status");
+            const subtitleNode = document.querySelector(".broadcast-subtitle");
             const soundPromptNode = document.getElementById("sound-prompt");
             const soundPromptCopy = document.getElementById("sound-prompt-copy");
             const enableSoundButton = document.getElementById("enable-sound-button");
@@ -1287,6 +1327,17 @@
                 if (typeof state.lastTicket === "string" && state.lastTicket !== broadcastState.lastTicket) {
                     setTicketInstant(state.lastTicket);
                 }
+
+                if (typeof state.subtitle === "string") {
+                    subtitleNode.textContent = state.subtitle;
+                    subtitleNode.classList.toggle("is-visible", state.subtitle.length > 0);
+                }
+            });
+
+            socket.on("subtitle", (payload) => {
+                if (!payload || typeof payload.text !== "string") return;
+                subtitleNode.textContent = payload.text;
+                subtitleNode.classList.toggle("is-visible", payload.text.length > 0);
             });
 
             socket.on("result", (payload) => {

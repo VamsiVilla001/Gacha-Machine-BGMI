@@ -3,7 +3,7 @@ const path = require("path");
 const http = require("http");
 const { WebSocketServer } = require("ws");
 
-const PORT = Number.parseInt(process.env.PORT || "3000", 10);
+const PORT = Number.parseInt(process.env.PORT || "3443", 10);
 const ROOT = __dirname;
 const STORAGE_FILE = path.join(ROOT, "picked-history.json");
 const DEFAULT_ROOM_ID = "default";
@@ -211,6 +211,7 @@ function buildStatePayload(roomId) {
         history: state.history,
         usedTickets: state.usedTickets,
         settings: state.settings,
+        subtitle: state.subtitle || "",
         usedCount: state.usedTickets.length,
         remainingCount: countRemainingTickets(state)
     };
@@ -351,6 +352,17 @@ wss.on("connection", (socket, request) => {
             }, (client) => client.role === "broadcast" && client.roomId === socket.roomId);
 
             broadcastState(socket.roomId);
+            return;
+        }
+
+        if (message.event === "subtitle") {
+            const text = String(message.data && message.data.text != null ? message.data.text : "").slice(0, 120);
+            activeRoomState.subtitle = text;
+
+            broadcast({
+                event: "subtitle",
+                data: { text }
+            }, (client) => client.roomId === socket.roomId);
             return;
         }
 

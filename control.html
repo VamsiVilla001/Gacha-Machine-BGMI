@@ -80,7 +80,18 @@
                 </ol>
             </section>
         </section>
-
+            <section class="panel-card">
+                <h2>Broadcast Subtitle</h2>
+                <label class="field field-stacked">
+                    <span>Subtitle Text</span>
+                    <input id="subtitle-input" type="text" maxlength="60" placeholder="e.g. Round 1 — UC Giveaway" autocomplete="off">
+                </label>
+                <div class="session-actions">
+                    <button type="button" id="send-subtitle-button" class="secondary-action-button">Send Subtitle</button>
+                    <button type="button" id="clear-subtitle-button" class="secondary-action-button">Clear Subtitle</button>
+                </div>
+                <p id="subtitle-hint">Sets the subtitle text shown on the broadcast overlay.</p>
+            </section>
         <section class="panel-card panel-card-action">
             <button type="button" id="send-result-button" class="knob-toggle-button">Send Result</button>
             <button type="button" id="clear-history-button" class="secondary-action-button">Clear Pick Memory</button>

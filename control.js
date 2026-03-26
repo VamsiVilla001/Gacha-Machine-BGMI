@@ -19,6 +19,10 @@ const controlHint = document.getElementById("control-hint");
 const lastResultNumber = document.getElementById("last-result-number");
 const resultModeCaption = document.getElementById("result-mode-caption");
 const pickHistoryList = document.getElementById("pick-history-list");
+const subtitleInput = document.getElementById("subtitle-input");
+const sendSubtitleButton = document.getElementById("send-subtitle-button");
+const clearSubtitleButton = document.getElementById("clear-subtitle-button");
+const subtitleHint = document.getElementById("subtitle-hint");
 
 const FALLBACK_HTTP_ORIGIN = "http://127.0.0.1:3000";
 const FALLBACK_WS_ORIGIN = "ws://127.0.0.1:3000";
@@ -521,6 +525,33 @@ function bindControls(socket) {
         }
 
         controlHint.textContent = "Pick history and persistent random memory reset requested for this room.";
+    });
+
+    sendSubtitleButton.addEventListener("click", () => {
+        const text = (subtitleInput.value || "").trim();
+        const sent = socket.emit("subtitle", { text });
+        if (!sent) {
+            subtitleHint.textContent = "Socket is still reconnecting. Wait for the connection to return.";
+            return;
+        }
+        subtitleHint.textContent = text ? `Subtitle updated: "${text}"` : "Subtitle cleared.";
+    });
+
+    clearSubtitleButton.addEventListener("click", () => {
+        subtitleInput.value = "";
+        const sent = socket.emit("subtitle", { text: "" });
+        if (!sent) {
+            subtitleHint.textContent = "Socket is still reconnecting. Wait for the connection to return.";
+            return;
+        }
+        subtitleHint.textContent = "Subtitle cleared on the broadcast.";
+    });
+
+    subtitleInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendSubtitleButton.click();
+        }
     });
 }
 

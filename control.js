@@ -25,6 +25,7 @@ const controlHint = document.getElementById("control-hint");
 const lastResultNumber = document.getElementById("last-result-number");
 const resultModeCaption = document.getElementById("result-mode-caption");
 const pickHistoryList = document.getElementById("pick-history-list");
+const subtitlePanel = document.getElementById("subtitle-panel");
 const subtitleInput = document.getElementById("subtitle-input");
 const sendSubtitleButton = document.getElementById("send-subtitle-button");
 const clearSubtitleButton = document.getElementById("clear-subtitle-button");
@@ -456,6 +457,19 @@ function updateHistoryUI() {
     });
 }
 
+function updateSubtitleUI() {
+    const isGoldActive = controlState.activeShow === "gold";
+
+    subtitlePanel.hidden = isGoldActive;
+    subtitleInput.disabled = isGoldActive;
+    sendSubtitleButton.disabled = isGoldActive;
+    clearSubtitleButton.disabled = isGoldActive;
+
+    if (!isGoldActive) {
+        subtitleInput.value = getActiveShowState().subtitle || "";
+    }
+}
+
 function refreshActiveShowUI(sessionMessage) {
     updateShowButtonsUI();
     syncRangeInputs();
@@ -464,7 +478,7 @@ function refreshActiveShowUI(sessionMessage) {
     updateResultUI();
     updateHistoryUI();
     updateStatusUI();
-    subtitleInput.value = getActiveShowState().subtitle || "";
+    updateSubtitleUI();
 }
 
 function applyState(showKey, state) {

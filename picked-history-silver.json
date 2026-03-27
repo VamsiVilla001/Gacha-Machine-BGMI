@@ -49,6 +49,17 @@
         "min": 0,
         "max": 999
       }
+    },
+    "71c3b043-95fd-4b09-871a-10280813a21a": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "GENERAL PASS HOLDERS",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
     }
   }
 }

@@ -490,6 +490,17 @@
         "min": 0,
         "max": 999
       }
+    },
+    "4c72bd8f-e0a6-4fd7-bb86-c121fb1b827a": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
     }
   }
 }

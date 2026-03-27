@@ -571,6 +571,28 @@
         "min": 0,
         "max": 9999
       }
+    },
+    "72c5b040-0a9a-48ed-a1c5-b690b4bb15b8": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "1a577c75-b274-4064-ae50-581276292404": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "asdas",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
     }
   }
 }

@@ -85,13 +85,13 @@
         .broadcast-shell {
             position: relative;
             overflow: hidden;
-            background: #12023c;
+            /* background: #12023c; */
         }
 
         .broadcast-canvas {
             position: relative;
-            width: 1920px;
-            height: 1080px;
+            width: 3696px;
+            height: 1344px;
             overflow: hidden;
             transform-origin: top left;
         }
@@ -102,18 +102,18 @@
         }
 
         .bg-image {
-            left: -194px;
-            top: -27px;
-            width: 2184px;
-            height: 1227px;
+            left: 0;
+            top: 0;
+            width: 3696px;
+            height: 1344px;
         }
 
         .rail {
-            width: 56px;
-            height: 1133px;
-            top: -27px;
+            width: 70px;
+            height: 1344px;
+            top: 0;
             background: #5901ef;
-            overflow: hidden;
+            /* overflow: hidden; */
         }
 
         .rail--left {
@@ -121,24 +121,33 @@
         }
 
         .rail--right {
-            left: 1864px;
+            right: 0;
         }
 
         .rail__dots {
             position: absolute;
-            width: 28px;
+            width: 35px;
         }
 
         .rail--left .rail__dots {
-            left: 14px;
-            top: -65.5px;
-            height: 1264px;
+            left: 25%;
+            top: 0;
+            height: 1344px;
         }
 
         .rail--right .rail__dots {
-            left: 14px;
-            top: 14.5px;
-            height: 1104px;
+            left: 25%;
+            top: 0;
+            height: 1344px;
+        }
+
+        .machine-group{
+            position: absolute;
+            left: 1136px;
+            top: 210px;
+            width: 100%;
+            height: 100%;
+            scale: calc(1.4);
         }
 
         .glow {
@@ -155,6 +164,14 @@
             pointer-events: none;
             user-select: none;
             -webkit-user-drag: none;
+        }
+
+        .machine-main{
+            position: absolute;
+            left: 500px;
+            top: -70px;
+            width: 100%;
+            height: 100%;
         }
 
         .machine-base {
@@ -182,23 +199,43 @@
             transition-timing-function: cubic-bezier(0.25, 0.9, 0.3, 1);
         }
 
-        .logo {
-            left: 1683px;
-            top: 60px;
-            width: 121px;
-            height: 147.176px;
+        .logo-header {
+            position: absolute;
+            left: 150px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 980px;
+            min-height: 980px;
+            z-index: 8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 36px;
+        }
+
+        .logo-header .logo {
+            position: relative;
+            inset: auto;
+            width: 560px;
+            max-width: 100%;
+            aspect-ratio: 121 / 147.176;
+            height: auto;
+            object-fit: contain;
             z-index: 8;
         }
 
-        .header {
-            position: absolute;
-            left: 116px;
-            top: 45px;
+        .logo-header .header {
+            position: relative;
+            inset: auto;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
             gap: 5px;
             z-index: 8;
+            text-align: center;
         }
 
         .broadcast-title,
@@ -211,10 +248,11 @@
         .broadcast-title {
             color: #ffffff;
             font-family: "Countach Broadcast Bold", sans-serif;
-            font-size: 140px;
-            line-height: 0.934;
-            letter-spacing: 2.8px;
+            font-size: 210px;
+            line-height: 0.88;
+            letter-spacing: 1.8px;
             text-transform: uppercase;
+            text-align: center;
         }
 
         .broadcast-subtitle {
@@ -446,46 +484,49 @@
 <body>
     <main class="broadcast-shell">
         <div class="broadcast-canvas" aria-label="Giveaway slot machine broadcast">
-            <img class="layer bg-image" src="./assets/images/broadcast-v2-bg.jpg" alt="" aria-hidden="true">
+            <img class="layer bg-image" src="./assets/MainScreen.webp" alt="" aria-hidden="true">
 
-        <div class="layer rail rail--left" aria-hidden="true">
-            <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-left.svg" alt="">
-        </div>
-
-        <div class="layer rail rail--right" aria-hidden="true">
-            <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-right.svg" alt="">
-        </div>
-
-        <img class="layer glow" src="./assets/svg/broadcast-v2-glow.svg" alt="" aria-hidden="true">
-        <img class="machine-svg machine-base" src="./assets/svg/slot-machine-base-exact.svg" alt="" aria-hidden="true">
-        <img class="layer logo" src="./assets/svg/broadcast-v2-logo.svg" alt="BGIS 2026 logo">
-
-        <div class="header">
-            <div class="broadcast-title">GIVEAWAY</div>
-        </div>
-        <div class="broadcast-label">GOLD SPIN</div>
-
-        <section class="reels" aria-label="Winning ticket digits">
-            <div class="reel reel--1" data-reel-index="0" aria-label="Thousands digit">
-                <div class="reel-strip" aria-hidden="true"></div>
+            <div class="layer rail rail--left" aria-hidden="true">
+                <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-left.svg" alt="">
             </div>
 
-            <div class="reel reel--2" data-reel-index="1" aria-label="Hundreds digit">
-                <div class="reel-strip" aria-hidden="true"></div>
+            <div class="layer rail rail--right" aria-hidden="true">
+                <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-right.svg" alt="">
             </div>
+            <div class="logo-header">
+                <img class="layer logo" src="./assets/svg/broadcast-v2-logo.svg" alt="BGIS 2026 logo">
 
-            <div class="reel reel--3" data-reel-index="2" aria-label="Tens digit">
-                <div class="reel-strip" aria-hidden="true"></div>
+                <div class="header">
+                    <div class="broadcast-title">GIVEAWAY</div>
+                </div>
             </div>
-            <div class="reel reel--4" data-reel-index="3" aria-label="Ones digit">
-                <div class="reel-strip" aria-hidden="true"></div>
+            <div class="machine-group">
+                <div class="machine-main">
+                    <img class="layer glow" src="./assets/svg/broadcast-v2-glow.svg" alt="" aria-hidden="true">
+                    <img class="machine-svg machine-base" src="./assets/svg/slot-machine-base-exact.svg" alt="" aria-hidden="true">
+                    <section class="reels" aria-label="Winning ticket digits">
+                    <div class="reel reel--1" data-reel-index="0" aria-label="Thousands digit">
+                        <div class="reel-strip" aria-hidden="true"></div>
+                    </div>
+
+                    <div class="reel reel--2" data-reel-index="1" aria-label="Hundreds digit">
+                        <div class="reel-strip" aria-hidden="true"></div>
+                    </div>
+
+                    <div class="reel reel--3" data-reel-index="2" aria-label="Tens digit">
+                        <div class="reel-strip" aria-hidden="true"></div>
+                    </div>
+                    <div class="reel reel--4" data-reel-index="3" aria-label="Ones digit">
+                        <div class="reel-strip" aria-hidden="true"></div>
+                    </div>
+                </section>
+
+                <img class="machine-svg machine-handle" src="./assets/svg/slot-machine-handle-exact.svg" alt="" aria-hidden="true">
+                <div class="broadcast-label">GOLD SPIN</div>
+                </div>
+                <div class="visually-hidden" id="room-id">default</div>
+                <div class="visually-hidden" id="connection-status">connecting</div>
             </div>
-        </section>
-
-        <img class="machine-svg machine-handle" src="./assets/svg/slot-machine-handle-exact.svg" alt="" aria-hidden="true">
-
-            <div class="visually-hidden" id="room-id">default</div>
-            <div class="visually-hidden" id="connection-status">connecting</div>
         </div>
     </main>
 
@@ -508,8 +549,8 @@
             const SPIN_STEP = 235;
             const INITIAL_POSITION = 40;
             const REEL_CENTER_OFFSET = 22;
-            const FRAME_WIDTH = 1920;
-            const FRAME_HEIGHT = 1080;
+            const FRAME_WIDTH = 3696;
+            const FRAME_HEIGHT = 1344;
             const SPIN_VELOCITIES = [0.0048, 0.00552, 0.00624, 0.00696];
             const MIN_STOP_ROWS = 4;
             const STOP_DELAYS = [1600, 3000, 4500, 6000];

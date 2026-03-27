@@ -88,6 +88,32 @@
         "min": 0,
         "max": 9999
       }
+    },
+    "944aef3d-5280-4c60-abe9-9f266e6b527c": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "ef9db684-b654-441f-b892-67e0b337a420": {
+      "lastTicket": "9437",
+      "history": [
+        "9437"
+      ],
+      "usedTickets": [
+        "9437"
+      ],
+      "subtitle": "asdasd",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
     }
   }
 }

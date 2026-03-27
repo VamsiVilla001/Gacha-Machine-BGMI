@@ -21,7 +21,7 @@
         }
 
         .launcher {
-            width: min(720px, 100%);
+            width: min(1920px, 100%);
             padding: 32px;
             border-radius: 28px;
             background: rgba(255, 255, 255, 0.06);
@@ -56,6 +56,17 @@
             box-shadow: 0 14px 24px rgba(53, 105, 159, 0.28);
         }
 
+        a.gold {
+            background: linear-gradient(45deg, #FFCC00 0%,#b68c01 60%, #b68c01 60%, #B8860B 100%);
+            color: #1d0a00;
+            box-shadow: 0 14px 24px rgba(230, 189, 18, 0.28);
+        }
+        a.silver {
+            background: linear-gradient(45deg, #A1A2A3 0%,#676769 40%, #676769 60%, #B3B6B5 100%);
+            color: #1d0a00;
+            box-shadow: 0 14px 24px rgba(230, 189, 18, 0.28);
+        }
+
         a small {
             display: block;
             margin-top: 6px;
@@ -70,13 +81,17 @@
         <h1>Giveaway Modules</h1>
         <p>Open the control page first, then use its generated broadcast link in any browser window or tab. Start the relay with <code>npm start</code> so both pages can communicate in real time over WebSocket.</p>
         <div class="links">
-            <a href="/broadcastV2.html">
-                Broadcast Page
-                <small>Slot-style reel display with animated ticket stops</small>
-            </a>
             <a href="/control.html">
                 Control Page
                 <small>Enter a 3-digit ticket and send it live</small>
+            </a>
+            <a href="/broadcastV2.html" class="gold">
+                Gold spin
+                <small>Slot-style reel display with animated ticket stops</small>
+            </a>
+            <a href="/broadcastV3.html" class="silver">
+                General pass holders
+                <small>Updated design with separate subtitle and label</small>
             </a>
         </div>
     </main>

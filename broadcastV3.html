@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giveaway - Gold</title>
+    <title>Giveaway General</title>
     <style>
         @font-face {
             font-family: "Countach Broadcast Bold";
@@ -235,12 +235,12 @@
             opacity: 1;
         }
 
-        .static {
+        .broadcast-label {
             position: absolute;
             left: 597px;
             top: 946px;
             width: 726px;
-            color: #e6bd12;
+            color: #FFF;
             font-family: "Countach Broadcast", sans-serif;
             font-size: 72px;
             line-height: 0.934;
@@ -296,13 +296,13 @@
         }
 
         .reel::before {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.58) 38%, rgba(255, 255, 255, 0) 100%);
+            fill: linear-gradient(180deg, rgba(0, 0, 0, 0.60) 20.53%, rgba(242, 242, 242, 0.60) 30.06%, rgba(0, 0, 0, 0.60) 68.18%);
+            background-blend-mode: screen;
             mix-blend-mode: screen;
-            z-index: 3;
         }
 
         .reel::after {
-            background: linear-gradient(180deg, rgba(36, 7, 0, 0.5) 0%, rgba(36, 7, 0, 0) 50%, rgba(36, 7, 0, 0.5) 100%);
+            background: linear-gradient(180deg, rgba(2, 0, 11, 0.4) 0%, rgba(242, 242, 242, 0.40) 50%, rgba(2, 0, 11, 0.4) 100%);
             z-index: 2;
         }
 
@@ -322,7 +322,7 @@
             width: var(--digit-width);
             height: calc(var(--spin-step) * 1px);
             margin: 0 0 0 calc(var(--digit-left) * 1px);
-            color: #240700;
+            color: #272727;
             text-align: center;
             leading-trim: both;
             text-edge: cap;
@@ -445,21 +445,21 @@
             <img class="layer bg-image" src="./assets/images/broadcast-v2-bg.jpg" alt="" aria-hidden="true">
 
         <div class="layer rail rail--left" aria-hidden="true">
-            <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-left.svg" alt="">
+            <img class="rail__dots" src="./assets/svg-new/broadcast-v2-dots-left.svg" alt="">
         </div>
 
         <div class="layer rail rail--right" aria-hidden="true">
-            <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-right.svg" alt="">
+            <img class="rail__dots" src="./assets/svg-new/broadcast-v2-dots-right.svg" alt="">
         </div>
 
-        <img class="layer glow" src="./assets/svg/broadcast-v2-glow.svg" alt="" aria-hidden="true">
-        <img class="machine-svg machine-base" src="./assets/svg/slot-machine-base-exact.svg" alt="" aria-hidden="true">
-        <img class="layer logo" src="./assets/svg/broadcast-v2-logo.svg" alt="BGIS 2026 logo">
+        <img class="layer glow" src="./assets/svg-new/broadcast-v2-glow.svg" alt="" aria-hidden="true">
+        <img class="machine-svg machine-base" src="./assets/svg-new/slot-machine-base-exact.svg" alt="" aria-hidden="true">
+        <img class="layer logo" src="./assets/svg-new/broadcast-v2-logo.svg" alt="BGIS 2026 logo">
 
         <div class="header">
             <div class="broadcast-title">GIVEAWAY</div>
         </div>
-        <div class="static">GOLD SPIN</div>
+        <div class="broadcast-label"></div>
 
         <section class="reels" aria-label="Winning ticket digits">
             <div class="reel reel--1" data-reel-index="0" aria-label="Hundreds digit">
@@ -475,7 +475,7 @@
             </div>
         </section>
 
-        <img class="machine-svg machine-handle" src="./assets/svg/slot-machine-handle-exact.svg" alt="" aria-hidden="true">
+        <img class="machine-svg machine-handle" src="./assets/svg-new/slot-machine-handle-exact.svg" alt="" aria-hidden="true">
 
             <div class="visually-hidden" id="room-id">default</div>
             <div class="visually-hidden" id="connection-status">connecting</div>
@@ -493,7 +493,7 @@
 
     <script>
         (function () {
-            const SHOW_KEY = "gold";
+            const SHOW_KEY = "silver";
             const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
             const DIGIT_COUNT = DIGITS.length;
             const REPEAT_COUNT = 12;

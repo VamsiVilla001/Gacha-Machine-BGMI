@@ -22,22 +22,30 @@
         <section class="panel-grid">
             <section class="panel-card panel-card-session">
                 <h2>Broadcast Session</h2>
+                <div class="field">
+                    <span>Active Show</span>
+                    <div class="toggle-group">
+                        <button type="button" id="show-gold-button" class="toggle-button" aria-pressed="true">Gold</button>
+                        <button type="button" id="show-silver-button" class="toggle-button" aria-pressed="false">Silver</button>
+                    </div>
+                </div>
                 <div class="session-grid">
                     <label class="field">
-                        <span>Room ID</span>
+                        <span id="session-room-label">Gold Room ID</span>
                         <output id="session-room-id" class="session-room-id"></output>
                     </label>
                     <label class="field">
-                        <span>Broadcast Link</span>
+                        <span id="broadcast-link-label">Gold Broadcast Link</span>
                         <input id="broadcast-link-input" type="text" readonly>
                     </label>
                 </div>
                 <div class="session-actions">
-                    <button type="button" id="generate-link-button" class="secondary-action-button">New Broadcast Link</button>
-                    <button type="button" id="open-broadcast-button" class="secondary-action-button">Open Broadcast</button>
-                    <button type="button" id="copy-broadcast-link-button" class="secondary-action-button">Copy Link</button>
+                    <button type="button" id="generate-link-button" class="secondary-action-button">New Broadcast Rooms</button>
+                    <button type="button" id="open-broadcast-gold-button" class="secondary-action-button secondary-action-button-gold">Open Gold Broadcast</button>
+                    <button type="button" id="open-broadcast-silver-button" class="secondary-action-button secondary-action-button-silver">Open Silver Broadcast</button>
+                    <button type="button" id="copy-broadcast-link-button" class="secondary-action-button">Copy Active Link</button>
                 </div>
-                <p id="session-hint">Use this generated link to open the slot-reel broadcast page in another browser window or OBS browser source.</p>
+                <p id="session-hint">Gold uses broadcastV2 and Silver uses broadcastV3. Each show has its own room and pick memory.</p>
             </section>
 
             <section class="panel-card">

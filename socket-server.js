@@ -5,13 +5,25 @@ const { WebSocketServer } = require("ws");
 
 const PORT = Number.parseInt(process.env.PORT || "3443", 10);
 const ROOT = __dirname;
-const STORAGE_FILE = path.join(ROOT, "picked-history.json");
 const DEFAULT_ROOM_ID = "default";
+const DEFAULT_SHOW_KEY = "gold";
+const SHOW_KEYS = Object.freeze({
+    gold: "gold",
+    silver: "silver"
+});
+const STORAGE_FILES = Object.freeze({
+    [SHOW_KEYS.gold]: path.join(ROOT, "picked-history-gold.json"),
+    [SHOW_KEYS.silver]: path.join(ROOT, "picked-history-silver.json")
+});
+const LEGACY_STORAGE_FILE = path.join(ROOT, "picked-history.json");
 const MIN_TICKET_VALUE = 0;
 const MAX_TICKET_VALUE = 999;
 const MAX_HISTORY_ITEMS = 50;
 
-const rooms = new Map();
+const roomStores = new Map([
+    [SHOW_KEYS.gold, new Map()],
+    [SHOW_KEYS.silver, new Map()]
+]);
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -25,6 +37,10 @@ function sanitizeRoomId(rawRoomId) {
         .slice(0, 64);
 
     return roomId || DEFAULT_ROOM_ID;
+}
+
+function sanitizeShowKey(rawShowKey) {
+    return rawShowKey === SHOW_KEYS.silver ? SHOW_KEYS.silver : DEFAULT_SHOW_KEY;
 }
 
 function normalizeTicket(rawTicket) {
@@ -72,6 +88,7 @@ function createDefaultState() {
         lastTicket: null,
         history: [],
         usedTickets: [],
+        subtitle: "",
         settings: normalizeSettings()
     };
 }
@@ -98,59 +115,90 @@ function normalizeRoomState(rawState = {}) {
                 .map((value) => normalizeTicket(value))
                 .filter(Boolean)
         )),
+        subtitle: typeof rawState.subtitle === "string" ? rawState.subtitle.slice(0, 120) : "",
         settings: normalizeSettings(rawState.settings || rawState)
     };
 }
 
-function getRoomState(roomId) {
+function getStore(showKey) {
+    return roomStores.get(sanitizeShowKey(showKey));
+}
+
+function getRoomState(showKey, roomId) {
+    const store = getStore(showKey);
     const normalizedRoomId = sanitizeRoomId(roomId);
 
-    if (!rooms.has(normalizedRoomId)) {
-        rooms.set(normalizedRoomId, createDefaultState());
+    if (!store.has(normalizedRoomId)) {
+        store.set(normalizedRoomId, createDefaultState());
     }
 
-    return rooms.get(normalizedRoomId);
+    return store.get(normalizedRoomId);
 }
 
-function loadStorage() {
+function readStorageFile(filePath) {
+    const raw = fs.readFileSync(filePath, "utf8");
+    const parsed = JSON.parse(raw);
+
+    if (parsed && typeof parsed === "object" && parsed.rooms && typeof parsed.rooms === "object") {
+        return parsed.rooms;
+    }
+
+    return {
+        [DEFAULT_ROOM_ID]: parsed
+    };
+}
+
+function loadStorage(showKey) {
+    const normalizedShowKey = sanitizeShowKey(showKey);
+    const storageFile = STORAGE_FILES[normalizedShowKey];
+    const store = getStore(normalizedShowKey);
+
     try {
-        if (!fs.existsSync(STORAGE_FILE)) {
-            return;
-        }
+        let sourceFile = storageFile;
 
-        const raw = fs.readFileSync(STORAGE_FILE, "utf8");
-        const parsed = JSON.parse(raw);
-
-        if (parsed && typeof parsed === "object" && parsed.rooms && typeof parsed.rooms === "object") {
-            for (const [roomId, roomState] of Object.entries(parsed.rooms)) {
-                rooms.set(sanitizeRoomId(roomId), normalizeRoomState(roomState));
+        if (!fs.existsSync(sourceFile)) {
+            if (normalizedShowKey === SHOW_KEYS.gold && fs.existsSync(LEGACY_STORAGE_FILE)) {
+                sourceFile = LEGACY_STORAGE_FILE;
+            } else {
+                return;
             }
-            return;
         }
 
-        rooms.set(DEFAULT_ROOM_ID, normalizeRoomState(parsed));
+        const roomsFromDisk = readStorageFile(sourceFile);
+        for (const [roomId, roomState] of Object.entries(roomsFromDisk)) {
+            store.set(sanitizeRoomId(roomId), normalizeRoomState(roomState));
+        }
     } catch (error) {
-        console.warn("Unable to read room storage:", error.message);
+        console.warn(`Unable to read ${normalizedShowKey} room storage:`, error.message);
     }
 }
 
-function saveStorage() {
+function saveStorage(showKey) {
+    const normalizedShowKey = sanitizeShowKey(showKey);
+    const store = getStore(normalizedShowKey);
     const payload = { rooms: {} };
 
-    for (const [roomId, roomState] of rooms.entries()) {
+    for (const [roomId, roomState] of store.entries()) {
         payload.rooms[roomId] = {
             lastTicket: roomState.lastTicket,
             history: roomState.history,
             usedTickets: roomState.usedTickets,
+            subtitle: roomState.subtitle || "",
             settings: roomState.settings
         };
     }
 
     try {
-        fs.writeFileSync(STORAGE_FILE, JSON.stringify(payload, null, 2));
+        fs.writeFileSync(STORAGE_FILES[normalizedShowKey], JSON.stringify(payload, null, 2));
     } catch (error) {
-        console.warn("Unable to write room storage:", error.message);
+        console.warn(`Unable to write ${normalizedShowKey} room storage:`, error.message);
     }
+}
+
+function loadAllStorage() {
+    Object.values(SHOW_KEYS).forEach((showKey) => {
+        loadStorage(showKey);
+    });
 }
 
 function getContentType(filePath) {
@@ -202,10 +250,12 @@ function countRemainingTickets(roomState) {
     return remainingCount;
 }
 
-function buildStatePayload(roomId) {
-    const state = getRoomState(roomId);
+function buildStatePayload(showKey, roomId) {
+    const normalizedShowKey = sanitizeShowKey(showKey);
+    const state = getRoomState(normalizedShowKey, roomId);
 
     return {
+        showKey: normalizedShowKey,
         roomId,
         lastTicket: state.lastTicket,
         history: state.history,
@@ -217,11 +267,13 @@ function buildStatePayload(roomId) {
     };
 }
 
-function broadcastState(roomId) {
+function broadcastState(showKey, roomId) {
+    const normalizedShowKey = sanitizeShowKey(showKey);
+
     broadcast({
         event: "state",
-        data: buildStatePayload(roomId)
-    }, (client) => client.roomId === roomId);
+        data: buildStatePayload(normalizedShowKey, roomId)
+    }, (client) => client.showKey === normalizedShowKey && client.roomId === roomId);
 }
 
 function recordTicket(roomState, ticket) {
@@ -310,11 +362,12 @@ const wss = new WebSocketServer({ server, path: "/ws" });
 wss.on("connection", (socket, request) => {
     const url = new URL(request.url, `http://${request.headers.host}`);
     socket.role = url.searchParams.get("role") || "unknown";
+    socket.showKey = sanitizeShowKey(url.searchParams.get("show"));
     socket.roomId = sanitizeRoomId(url.searchParams.get("room"));
 
     sendJson(socket, {
         event: "state",
-        data: buildStatePayload(socket.roomId)
+        data: buildStatePayload(socket.showKey, socket.roomId)
     });
 
     socket.on("message", (rawMessage) => {
@@ -329,7 +382,7 @@ wss.on("connection", (socket, request) => {
             return;
         }
 
-        const activeRoomState = getRoomState(socket.roomId);
+        const activeRoomState = getRoomState(socket.showKey, socket.roomId);
 
         if (message.event === "result") {
             const resolution = resolveResultTicket(activeRoomState, message.data || {});
@@ -339,30 +392,35 @@ wss.on("connection", (socket, request) => {
                     event: "error",
                     data: { message: resolution.error }
                 });
-                broadcastState(socket.roomId);
+                broadcastState(socket.showKey, socket.roomId);
                 return;
             }
 
             recordTicket(activeRoomState, resolution.ticket);
-            saveStorage();
+            saveStorage(socket.showKey);
 
             broadcast({
                 event: "result",
                 data: { ticket: resolution.ticket }
-            }, (client) => client.role === "broadcast" && client.roomId === socket.roomId);
+            }, (client) => (
+                client.role === "broadcast" &&
+                client.showKey === socket.showKey &&
+                client.roomId === socket.roomId
+            ));
 
-            broadcastState(socket.roomId);
+            broadcastState(socket.showKey, socket.roomId);
             return;
         }
 
         if (message.event === "subtitle") {
             const text = String(message.data && message.data.text != null ? message.data.text : "").slice(0, 120);
             activeRoomState.subtitle = text;
+            saveStorage(socket.showKey);
 
             broadcast({
                 event: "subtitle",
                 data: { text }
-            }, (client) => client.roomId === socket.roomId);
+            }, (client) => client.showKey === socket.showKey && client.roomId === socket.roomId);
             return;
         }
 
@@ -370,13 +428,16 @@ wss.on("connection", (socket, request) => {
             activeRoomState.lastTicket = null;
             activeRoomState.history = [];
             activeRoomState.usedTickets = [];
-            saveStorage();
-            broadcastState(socket.roomId);
+            saveStorage(socket.showKey);
+            broadcastState(socket.showKey, socket.roomId);
         }
     });
 });
 
-loadStorage();
+loadAllStorage();
+Object.values(SHOW_KEYS).forEach((showKey) => {
+    saveStorage(showKey);
+});
 server.listen(PORT, () => {
     console.log(`Giveaway socket server listening on http://localhost:${PORT}`);
 });

@@ -201,6 +201,18 @@ h1 {
     box-shadow: 0 14px 22px rgba(53, 105, 159, 0.28);
 }
 
+#show-gold-button.is-active {
+    background: linear-gradient(180deg, #ffd84c 0%, #e6bd12 100%);
+    color: #1d0a00;
+    box-shadow: 0 14px 24px rgba(230, 189, 18, 0.28);
+}
+
+#show-silver-button.is-active {
+    background: linear-gradient(180deg, #d6d9dd 0%, #9aa1aa 100%);
+    color: #1a2128;
+    box-shadow: 0 14px 24px rgba(125, 133, 145, 0.24);
+}
+
 .panel-card-result {
     display: flex;
     flex-direction: column;
@@ -305,6 +317,18 @@ h1 {
 
 .secondary-action-button:hover {
     transform: translateY(-1px);
+}
+
+.secondary-action-button-gold {
+    background: linear-gradient(180deg, #ffd84c 0%, #e6bd12 100%);
+    color: #1d0a00;
+    box-shadow: 0 14px 24px rgba(230, 189, 18, 0.28);
+}
+
+.secondary-action-button-silver {
+    background: linear-gradient(180deg, #d6d9dd 0%, #9aa1aa 100%);
+    color: #1a2128;
+    box-shadow: 0 14px 24px rgba(125, 133, 145, 0.24);
 }
 
 @media (max-width: 760px) {

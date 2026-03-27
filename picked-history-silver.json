@@ -1,0 +1,54 @@
+{
+  "rooms": {
+    "07959cc3-3e7d-46b5-98fa-78aa38ffa195": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "c6369df8-f751-435a-84d5-55ad3cce1582": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "default": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    },
+    "e6f8070f-a2d5-4854-8529-395958130cd6": {
+      "lastTicket": "130",
+      "history": [
+        "130",
+        "841"
+      ],
+      "usedTickets": [
+        "841",
+        "130"
+      ],
+      "subtitle": "GENERAL PASS HOLDERS",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 999
+      }
+    }
+  }
+}

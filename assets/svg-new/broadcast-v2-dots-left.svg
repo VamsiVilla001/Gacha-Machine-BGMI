@@ -1,0 +1,66 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 28 1268" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>
+@keyframes dot-warm-swap {
+  0%, 49.999% { fill: #FFCE00; }
+  50%, 100% { fill: #F6F6F6; }
+}
+
+@keyframes dot-cool-swap {
+  0%, 49.999% { fill: #F6F6F6; }
+  50%, 100% { fill: #FFCE00; }
+}
+
+.dot-warm {
+  animation: dot-warm-swap 1.2s steps(1, end) infinite;
+}
+
+.dot-cool {
+  animation: dot-cool-swap 1.2s steps(1, end) infinite;
+}
+</style>
+<g id="Dots" filter="url(#filter0_d_0_1115)">
+<circle class="dot-warm" id="Ellipse 20" cx="12" cy="12" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 21" cx="12" cy="52" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 22" cx="12" cy="92" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 23" cx="12" cy="132" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 24" cx="12" cy="172" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 25" cx="12" cy="212" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 26" cx="12" cy="252" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 27" cx="12" cy="292" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 28" cx="12" cy="332" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 29" cx="12" cy="372" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 30" cx="12" cy="412" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 31" cx="12" cy="452" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 32" cx="12" cy="492" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 33" cx="12" cy="532" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 34" cx="12" cy="572" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 35" cx="12" cy="612" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 36" cx="12" cy="652" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 37" cx="12" cy="692" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 38" cx="12" cy="732" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 39" cx="12" cy="772" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 40" cx="12" cy="812" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 41" cx="12" cy="852" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 42" cx="12" cy="892" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 43" cx="12" cy="932" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 44" cx="12" cy="972" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 45" cx="12" cy="1012" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 46" cx="12" cy="1052" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 47" cx="12" cy="1092" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 48" cx="12" cy="1132" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 49" cx="12" cy="1172" r="12" fill="#F6F6F6"/>
+<circle class="dot-warm" id="Ellipse 50" cx="12" cy="1212" r="12" fill="#FFCE00"/>
+<circle class="dot-cool" id="Ellipse 51" cx="12" cy="1252" r="12" fill="#F6F6F6"/>
+</g>
+<defs>
+<filter id="filter0_d_0_1115" x="0" y="0" width="28" height="1268" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="4" dy="4"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.196078 0 0 0 0 0 0 0 0 0 0.533333 0 0 0 0.5 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1115"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1115" result="shape"/>
+</filter>
+</defs>
+</svg>

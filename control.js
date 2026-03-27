@@ -1,11 +1,17 @@
+const controlShell = document.getElementById("control-shell");
 const connectionStatus = document.getElementById("connection-status");
 const machineStatus = document.getElementById("machine-status");
+const sessionRoomLabel = document.getElementById("session-room-label");
 const sessionRoomId = document.getElementById("session-room-id");
+const broadcastLinkLabel = document.getElementById("broadcast-link-label");
 const broadcastLinkInput = document.getElementById("broadcast-link-input");
 const generateLinkButton = document.getElementById("generate-link-button");
-const openBroadcastButton = document.getElementById("open-broadcast-button");
+const openBroadcastGoldButton = document.getElementById("open-broadcast-gold-button");
+const openBroadcastSilverButton = document.getElementById("open-broadcast-silver-button");
 const copyBroadcastLinkButton = document.getElementById("copy-broadcast-link-button");
 const sessionHint = document.getElementById("session-hint");
+const showGoldButton = document.getElementById("show-gold-button");
+const showSilverButton = document.getElementById("show-silver-button");
 const scriptedModeButton = document.getElementById("mode-scripted-button");
 const randomModeButton = document.getElementById("mode-random-button");
 const rangeMinInput = document.getElementById("range-min-input");
@@ -29,17 +35,43 @@ const FALLBACK_WS_ORIGIN = "ws://127.0.0.1:3000";
 const MIN_TICKET_VALUE = 0;
 const MAX_TICKET_VALUE = 999;
 const DEFAULT_MODE = "random";
+const DEFAULT_SHOW_KEY = "gold";
+const SHOW_CONFIG = Object.freeze({
+    gold: {
+        label: "Gold",
+        queryKey: "goldRoom",
+        broadcastPath: "/broadcastV2.html"
+    },
+    silver: {
+        label: "Silver",
+        queryKey: "silverRoom",
+        broadcastPath: "/broadcastV3.html"
+    }
+});
+
+function createShowState() {
+    return {
+        roomId: "",
+        lastTicket: null,
+        history: [],
+        usedTickets: [],
+        mode: DEFAULT_MODE,
+        rangeMin: MIN_TICKET_VALUE,
+        rangeMax: MAX_TICKET_VALUE,
+        usedCount: 0,
+        remainingCount: MAX_TICKET_VALUE - MIN_TICKET_VALUE + 1,
+        subtitle: "",
+        connectionStatus: "connecting",
+        machineStatus: "Waiting"
+    };
+}
 
 const controlState = {
-    roomId: "",
-    lastTicket: null,
-    history: [],
-    usedTickets: [],
-    mode: DEFAULT_MODE,
-    rangeMin: MIN_TICKET_VALUE,
-    rangeMax: MAX_TICKET_VALUE,
-    usedCount: 0,
-    remainingCount: MAX_TICKET_VALUE - MIN_TICKET_VALUE + 1
+    activeShow: DEFAULT_SHOW_KEY,
+    shows: {
+        gold: createShowState(),
+        silver: createShowState()
+    }
 };
 
 function clamp(value, min, max) {
@@ -52,6 +84,10 @@ function sanitizeRoomId(rawRoomId) {
         .toLowerCase()
         .replace(/[^a-z0-9_-]/g, "")
         .slice(0, 64);
+}
+
+function sanitizeShowKey(rawShowKey) {
+    return rawShowKey === "silver" ? "silver" : DEFAULT_SHOW_KEY;
 }
 
 function normalizeTicket(rawTicket) {
@@ -78,9 +114,9 @@ function normalizeRangeValue(rawValue, fallbackValue) {
     return clamp(Number.parseInt(digits, 10), MIN_TICKET_VALUE, MAX_TICKET_VALUE);
 }
 
-function normalizeRangePair(minValue, maxValue) {
-    let nextMin = normalizeRangeValue(minValue, controlState.rangeMin);
-    let nextMax = normalizeRangeValue(maxValue, controlState.rangeMax);
+function normalizeRangePair(minValue, maxValue, fallbackMin, fallbackMax) {
+    let nextMin = normalizeRangeValue(minValue, fallbackMin);
+    let nextMax = normalizeRangeValue(maxValue, fallbackMax);
 
     if (nextMin > nextMax) {
         [nextMin, nextMax] = [nextMax, nextMin];
@@ -104,18 +140,57 @@ function generateRoomId() {
     return sanitizeRoomId(`room-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 }
 
-function ensureRoomId() {
-    const url = new URL(window.location.href);
-    const existingRoomId = sanitizeRoomId(url.searchParams.get("room"));
+function getShowState(showKey) {
+    return controlState.shows[sanitizeShowKey(showKey)];
+}
 
-    if (existingRoomId) {
-        return existingRoomId;
+function getActiveShowState() {
+    return getShowState(controlState.activeShow);
+}
+
+function ensureShowContext() {
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    const legacyRoomId = sanitizeRoomId(url.searchParams.get("room"));
+    if (legacyRoomId && !sanitizeRoomId(url.searchParams.get(SHOW_CONFIG.gold.queryKey))) {
+        url.searchParams.set(SHOW_CONFIG.gold.queryKey, legacyRoomId);
+        changed = true;
     }
 
-    const nextRoomId = generateRoomId();
-    url.searchParams.set("room", nextRoomId);
+    if (url.searchParams.has("room")) {
+        url.searchParams.delete("room");
+        changed = true;
+    }
+
+    Object.entries(SHOW_CONFIG).forEach(([showKey, config]) => {
+        const existingRoomId = sanitizeRoomId(url.searchParams.get(config.queryKey));
+        const nextRoomId = existingRoomId || generateRoomId();
+        controlState.shows[showKey].roomId = nextRoomId;
+
+        if (existingRoomId !== nextRoomId) {
+            url.searchParams.set(config.queryKey, nextRoomId);
+            changed = true;
+        }
+    });
+
+    const activeShow = sanitizeShowKey(url.searchParams.get("show"));
+    controlState.activeShow = activeShow;
+
+    if (url.searchParams.get("show") !== activeShow) {
+        url.searchParams.set("show", activeShow);
+        changed = true;
+    }
+
+    if (changed) {
+        window.history.replaceState({}, "", url);
+    }
+}
+
+function updateUrlForActiveShow() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("show", controlState.activeShow);
     window.history.replaceState({}, "", url);
-    return nextRoomId;
 }
 
 function getHttpOrigin() {
@@ -138,14 +213,15 @@ function getWebSocketOrigin() {
     return FALLBACK_WS_ORIGIN;
 }
 
-function buildWebSocketUrl(role, roomId) {
+function buildWebSocketUrl(role, showKey, roomId) {
     const url = new URL("/ws", `${getWebSocketOrigin()}/`);
     url.searchParams.set("role", role);
+    url.searchParams.set("show", sanitizeShowKey(showKey));
     url.searchParams.set("room", roomId);
     return url.toString();
 }
 
-function createSocketClient({ role, roomId, onConnectionChange }) {
+function createSocketClient({ role, showKey, roomId, onConnectionChange }) {
     const listeners = new Map();
     let socket = null;
     let connectionId = 0;
@@ -157,10 +233,10 @@ function createSocketClient({ role, roomId, onConnectionChange }) {
 
     function connect() {
         const nextConnectionId = ++connectionId;
-        socket = new WebSocket(buildWebSocketUrl(role, roomId));
+        socket = new WebSocket(buildWebSocketUrl(role, showKey, roomId));
 
         if (typeof onConnectionChange === "function") {
-            onConnectionChange("connecting");
+            onConnectionChange(showKey, "connecting");
         }
 
         socket.addEventListener("open", () => {
@@ -170,7 +246,7 @@ function createSocketClient({ role, roomId, onConnectionChange }) {
             }
 
             if (typeof onConnectionChange === "function") {
-                onConnectionChange("connected");
+                onConnectionChange(showKey, "connected");
             }
         });
 
@@ -197,7 +273,7 @@ function createSocketClient({ role, roomId, onConnectionChange }) {
             }
 
             if (typeof onConnectionChange === "function") {
-                onConnectionChange("reconnecting");
+                onConnectionChange(showKey, "reconnecting");
             }
 
             window.setTimeout(() => {
@@ -232,21 +308,24 @@ function createSocketClient({ role, roomId, onConnectionChange }) {
     };
 }
 
-function getBroadcastUrl() {
-    const url = new URL("/broadcastV2.html", `${getHttpOrigin()}/`);
-    url.searchParams.set("room", controlState.roomId);
+function getBroadcastUrl(showKey) {
+    const normalizedShowKey = sanitizeShowKey(showKey);
+    const showState = getShowState(normalizedShowKey);
+    const url = new URL(SHOW_CONFIG[normalizedShowKey].broadcastPath, `${getHttpOrigin()}/`);
+    url.searchParams.set("room", showState.roomId);
+    url.searchParams.set("show", normalizedShowKey);
     return url.toString();
 }
 
-function getRangeLabel() {
-    return `${formatTicketValue(controlState.rangeMin)}-${formatTicketValue(controlState.rangeMax)}`;
+function getRangeLabel(showState) {
+    return `${formatTicketValue(showState.rangeMin)}-${formatTicketValue(showState.rangeMax)}`;
 }
 
-function countRemainingTicketsForRange(min, max) {
-    const usedTicketSet = new Set(controlState.usedTickets);
+function countRemainingTicketsForRange(showState, minValue = showState.rangeMin, maxValue = showState.rangeMax) {
+    const usedTicketSet = new Set(showState.usedTickets);
     let remainingCount = 0;
 
-    for (let value = min; value <= max; value += 1) {
+    for (let value = minValue; value <= maxValue; value += 1) {
         if (!usedTicketSet.has(formatTicketValue(value))) {
             remainingCount += 1;
         }
@@ -256,39 +335,53 @@ function countRemainingTicketsForRange(min, max) {
 }
 
 function syncRangeInputs() {
-    rangeMinInput.value = formatTicketValue(controlState.rangeMin);
-    rangeMaxInput.value = formatTicketValue(controlState.rangeMax);
+    const showState = getActiveShowState();
+    rangeMinInput.value = formatTicketValue(showState.rangeMin);
+    rangeMaxInput.value = formatTicketValue(showState.rangeMax);
 }
 
 function updateSessionUI(message) {
-    sessionRoomId.textContent = controlState.roomId;
-    broadcastLinkInput.value = getBroadcastUrl();
+    const activeShowKey = controlState.activeShow;
+    const activeShowConfig = SHOW_CONFIG[activeShowKey];
+    const activeShowState = getActiveShowState();
+
+    sessionRoomLabel.textContent = `${activeShowConfig.label} Room ID`;
+    broadcastLinkLabel.textContent = `${activeShowConfig.label} Broadcast Link`;
+    sessionRoomId.textContent = activeShowState.roomId;
+    broadcastLinkInput.value = getBroadcastUrl(activeShowKey);
     sessionHint.textContent =
         message ||
-        "Use this generated link to open the slot-reel broadcast page in any browser or OBS browser source.";
+        `${activeShowConfig.label} is active. Gold uses broadcastV2 and Silver uses broadcastV3. Each show has its own room and pick memory.`;
 }
 
-function switchRoom(nextRoomId) {
-    controlState.roomId = sanitizeRoomId(nextRoomId) || generateRoomId();
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.set("room", controlState.roomId);
-    window.history.replaceState({}, "", nextUrl);
-    window.location.reload();
-}
-
-function setConnectionStatus(status) {
+function updateStatusUI() {
+    const showState = getActiveShowState();
     const labelByStatus = {
         connecting: "Connecting",
         connected: "Connected",
         reconnecting: "Reconnecting"
     };
 
-    connectionStatus.textContent = labelByStatus[status] || "Disconnected";
-    machineStatus.textContent = status === "connected" ? "Ready" : "Waiting";
+    connectionStatus.textContent = labelByStatus[showState.connectionStatus] || "Disconnected";
+    machineStatus.textContent = showState.machineStatus;
+}
+
+function updateShowButtonsUI() {
+    if (controlShell) {
+        controlShell.dataset.activeShow = controlState.activeShow;
+    }
+
+    showGoldButton.classList.toggle("is-active", controlState.activeShow === "gold");
+    showGoldButton.setAttribute("aria-pressed", String(controlState.activeShow === "gold"));
+    showSilverButton.classList.toggle("is-active", controlState.activeShow === "silver");
+    showSilverButton.setAttribute("aria-pressed", String(controlState.activeShow === "silver"));
 }
 
 function updateModeUI() {
-    const isRandom = controlState.mode === "random";
+    const showKey = controlState.activeShow;
+    const showState = getActiveShowState();
+    const showLabel = SHOW_CONFIG[showKey].label;
+    const isRandom = showState.mode === "random";
 
     scriptedModeButton.classList.toggle("is-active", !isRandom);
     scriptedModeButton.setAttribute("aria-pressed", String(!isRandom));
@@ -297,53 +390,58 @@ function updateModeUI() {
 
     ticketInput.disabled = isRandom;
     ticketInput.placeholder = isRandom ? "Auto draw" : "781";
-    sendResultButton.textContent = isRandom ? "Draw Random Result" : "Send Scripted Result";
+    sendResultButton.textContent = isRandom ? `Draw ${showLabel} Result` : `Send ${showLabel} Ticket`;
 
     if (isRandom) {
-        ticketHelp.textContent = `Random mode draws one unused ticket from ${getRangeLabel()}.`;
+        ticketHelp.textContent = `${showLabel} random mode draws one unused ticket from ${getRangeLabel(showState)}.`;
         rangeHelp.textContent =
-            controlState.remainingCount > 0
-                ? `${controlState.remainingCount} unique ticket${controlState.remainingCount === 1 ? "" : "s"} remaining before the current range is exhausted.`
-                : `No tickets remain in ${getRangeLabel()}. Clear pick memory or change the range.`;
+            showState.remainingCount > 0
+                ? `${showState.remainingCount} unique ticket${showState.remainingCount === 1 ? "" : "s"} remaining for ${showLabel.toLowerCase()}.`
+                : `No tickets remain in ${getRangeLabel(showState)} for ${showLabel.toLowerCase()}. Clear pick memory or change the range.`;
         return;
     }
 
-    ticketHelp.textContent = "Scripted mode sends the exact 3-digit ticket you enter to the broadcast room.";
+    ticketHelp.textContent = `${showLabel} scripted mode sends the exact 3-digit ticket you enter to that broadcast room.`;
     rangeHelp.textContent =
-        controlState.usedCount > 0
-            ? `Persistent pick memory currently tracks ${controlState.usedCount} used ticket${controlState.usedCount === 1 ? "" : "s"} for future random draws.`
-            : "Persistent pick memory is empty. Random mode can use the full active range.";
+        showState.usedCount > 0
+            ? `${showLabel} pick memory currently tracks ${showState.usedCount} used ticket${showState.usedCount === 1 ? "" : "s"} for future random draws.`
+            : `${showLabel} pick memory is empty. Random mode can use the full active range.`;
 }
 
 function updateResultUI() {
-    if (controlState.lastTicket) {
-        lastResultNumber.textContent = controlState.lastTicket;
+    const showKey = controlState.activeShow;
+    const showState = getActiveShowState();
+    const showLabel = SHOW_CONFIG[showKey].label;
+
+    if (showState.lastTicket) {
+        lastResultNumber.textContent = showState.lastTicket;
         lastResultNumber.classList.remove("is-pending");
 
-        if (controlState.mode === "random") {
-            resultModeCaption.textContent = `Latest random draw from ${getRangeLabel()}. ${controlState.remainingCount} unique ticket${controlState.remainingCount === 1 ? "" : "s"} remaining.`;
+        if (showState.mode === "random") {
+            resultModeCaption.textContent = `${showLabel} latest random draw from ${getRangeLabel(showState)}. ${showState.remainingCount} unique ticket${showState.remainingCount === 1 ? "" : "s"} remaining.`;
             return;
         }
 
-        resultModeCaption.textContent = "Latest scripted ticket sent to the broadcast room.";
+        resultModeCaption.textContent = `${showLabel} latest scripted ticket sent to the broadcast room.`;
         return;
     }
 
     lastResultNumber.textContent = "---";
     lastResultNumber.classList.add("is-pending");
 
-    if (controlState.mode === "random") {
-        resultModeCaption.textContent = `Waiting for a random draw. ${controlState.remainingCount} ticket${controlState.remainingCount === 1 ? "" : "s"} available in ${getRangeLabel()}.`;
+    if (showState.mode === "random") {
+        resultModeCaption.textContent = `Waiting for a ${showLabel.toLowerCase()} random draw. ${showState.remainingCount} ticket${showState.remainingCount === 1 ? "" : "s"} available in ${getRangeLabel(showState)}.`;
         return;
     }
 
-    resultModeCaption.textContent = "Waiting for the next scripted ticket.";
+    resultModeCaption.textContent = `Waiting for the next ${showLabel.toLowerCase()} scripted ticket.`;
 }
 
 function updateHistoryUI() {
+    const showState = getActiveShowState();
     pickHistoryList.innerHTML = "";
 
-    if (controlState.history.length === 0) {
+    if (showState.history.length === 0) {
         const emptyItem = document.createElement("li");
         emptyItem.className = "history-empty";
         emptyItem.textContent = "No tickets sent yet.";
@@ -351,61 +449,84 @@ function updateHistoryUI() {
         return;
     }
 
-    controlState.history.forEach((ticket) => {
+    showState.history.forEach((ticket) => {
         const item = document.createElement("li");
         item.textContent = ticket;
         pickHistoryList.appendChild(item);
     });
 }
 
-function applyState(state) {
+function refreshActiveShowUI(sessionMessage) {
+    updateShowButtonsUI();
+    syncRangeInputs();
+    updateSessionUI(sessionMessage);
+    updateModeUI();
+    updateResultUI();
+    updateHistoryUI();
+    updateStatusUI();
+    subtitleInput.value = getActiveShowState().subtitle || "";
+}
+
+function applyState(showKey, state) {
     if (!state || typeof state !== "object") {
         return;
     }
 
-    controlState.lastTicket = typeof state.lastTicket === "string" ? normalizeTicket(state.lastTicket) : null;
-    controlState.history = Array.isArray(state.history)
+    const showState = getShowState(showKey);
+
+    if (typeof state.roomId === "string") {
+        showState.roomId = sanitizeRoomId(state.roomId) || showState.roomId;
+    }
+
+    showState.lastTicket = typeof state.lastTicket === "string" ? normalizeTicket(state.lastTicket) : null;
+    showState.history = Array.isArray(state.history)
         ? state.history.map((ticket) => normalizeTicket(ticket)).filter(Boolean)
         : [];
-    controlState.usedTickets = Array.isArray(state.usedTickets)
+    showState.usedTickets = Array.isArray(state.usedTickets)
         ? Array.from(new Set(state.usedTickets.map((ticket) => normalizeTicket(ticket)).filter(Boolean)))
-        : Array.from(new Set(controlState.history));
-
-    controlState.mode = normalizeMode(state.settings?.mode ?? controlState.mode);
+        : Array.from(new Set(showState.history));
+    showState.subtitle = typeof state.subtitle === "string" ? state.subtitle : "";
+    showState.mode = normalizeMode(state.settings?.mode ?? showState.mode);
 
     const nextRange = normalizeRangePair(
-        state.settings?.min ?? controlState.rangeMin,
-        state.settings?.max ?? controlState.rangeMax
+        state.settings?.min ?? showState.rangeMin,
+        state.settings?.max ?? showState.rangeMax,
+        showState.rangeMin,
+        showState.rangeMax
     );
 
-    controlState.rangeMin = nextRange.min;
-    controlState.rangeMax = nextRange.max;
+    showState.rangeMin = nextRange.min;
+    showState.rangeMax = nextRange.max;
 
     const parsedUsedCount = Number.parseInt(String(state.usedCount ?? ""), 10);
-    const fallbackUsedCount = controlState.usedTickets.length;
-    controlState.usedCount = Number.isFinite(parsedUsedCount) ? Math.max(0, parsedUsedCount) : fallbackUsedCount;
+    showState.usedCount = Number.isFinite(parsedUsedCount) ? Math.max(0, parsedUsedCount) : showState.usedTickets.length;
 
     const parsedRemainingCount = Number.parseInt(String(state.remainingCount ?? ""), 10);
-    const fallbackRemainingCount = countRemainingTicketsForRange(controlState.rangeMin, controlState.rangeMax);
-    controlState.remainingCount = Number.isFinite(parsedRemainingCount)
+    showState.remainingCount = Number.isFinite(parsedRemainingCount)
         ? Math.max(0, parsedRemainingCount)
-        : fallbackRemainingCount;
+        : countRemainingTicketsForRange(showState);
 
-    syncRangeInputs();
-    updateModeUI();
-    updateResultUI();
-    updateHistoryUI();
+    if (showState.connectionStatus === "connected") {
+        showState.machineStatus = "Ready";
+    }
 
-    if (connectionStatus.textContent === "Connected") {
-        machineStatus.textContent = "Ready";
+    if (controlState.activeShow === sanitizeShowKey(showKey)) {
+        refreshActiveShowUI();
     }
 }
 
 function commitRangeInputs() {
-    const nextRange = normalizeRangePair(rangeMinInput.value, rangeMaxInput.value);
-    controlState.rangeMin = nextRange.min;
-    controlState.rangeMax = nextRange.max;
-    controlState.remainingCount = countRemainingTicketsForRange(controlState.rangeMin, controlState.rangeMax);
+    const showState = getActiveShowState();
+    const nextRange = normalizeRangePair(
+        rangeMinInput.value,
+        rangeMaxInput.value,
+        showState.rangeMin,
+        showState.rangeMax
+    );
+
+    showState.rangeMin = nextRange.min;
+    showState.rangeMax = nextRange.max;
+    showState.remainingCount = countRemainingTicketsForRange(showState);
     syncRangeInputs();
     updateModeUI();
     updateResultUI();
@@ -417,21 +538,58 @@ function sanitizeNumericInput(inputNode) {
         .slice(0, 3);
 }
 
-function bindControls(socket) {
+function setActiveShow(showKey) {
+    controlState.activeShow = sanitizeShowKey(showKey);
+    updateUrlForActiveShow();
+    refreshActiveShowUI();
+    controlHint.textContent = `This panel is ready to send results to the ${SHOW_CONFIG[controlState.activeShow].label.toLowerCase()} room.`;
+    subtitleHint.textContent = "Sets the subtitle text shown on the broadcast overlay.";
+}
+
+function setConnectionStatus(showKey, status) {
+    const showState = getShowState(showKey);
+    showState.connectionStatus = status;
+
+    if (status === "connected") {
+        showState.machineStatus = "Ready";
+    } else if (showState.machineStatus !== "Blocked") {
+        showState.machineStatus = "Waiting";
+    }
+
+    if (controlState.activeShow === sanitizeShowKey(showKey)) {
+        updateStatusUI();
+    }
+}
+
+function bindControls(sockets) {
     generateLinkButton.addEventListener("click", () => {
-        switchRoom(generateRoomId());
+        const url = new URL(window.location.href);
+
+        Object.entries(SHOW_CONFIG).forEach(([showKey, config]) => {
+            const nextRoomId = generateRoomId();
+            controlState.shows[showKey].roomId = nextRoomId;
+            url.searchParams.set(config.queryKey, nextRoomId);
+        });
+
+        url.searchParams.set("show", controlState.activeShow);
+        window.history.replaceState({}, "", url);
+        window.location.reload();
     });
 
-    openBroadcastButton.addEventListener("click", () => {
-        window.open(getBroadcastUrl(), "_blank", "noopener");
+    openBroadcastGoldButton.addEventListener("click", () => {
+        window.open(getBroadcastUrl("gold"), "_blank", "noopener");
+    });
+
+    openBroadcastSilverButton.addEventListener("click", () => {
+        window.open(getBroadcastUrl("silver"), "_blank", "noopener");
     });
 
     copyBroadcastLinkButton.addEventListener("click", async () => {
-        const link = getBroadcastUrl();
+        const link = getBroadcastUrl(controlState.activeShow);
 
         try {
             await navigator.clipboard.writeText(link);
-            updateSessionUI("Broadcast link copied. Open it in the other window.");
+            updateSessionUI(`${SHOW_CONFIG[controlState.activeShow].label} broadcast link copied.`);
         } catch {
             broadcastLinkInput.focus();
             broadcastLinkInput.select();
@@ -439,14 +597,22 @@ function bindControls(socket) {
         }
     });
 
+    showGoldButton.addEventListener("click", () => {
+        setActiveShow("gold");
+    });
+
+    showSilverButton.addEventListener("click", () => {
+        setActiveShow("silver");
+    });
+
     scriptedModeButton.addEventListener("click", () => {
-        controlState.mode = "scripted";
+        getActiveShowState().mode = "scripted";
         updateModeUI();
         updateResultUI();
     });
 
     randomModeButton.addEventListener("click", () => {
-        controlState.mode = "random";
+        getActiveShowState().mode = "random";
         updateModeUI();
         updateResultUI();
     });
@@ -480,23 +646,26 @@ function bindControls(socket) {
     });
 
     sendResultButton.addEventListener("click", () => {
+        const showKey = controlState.activeShow;
+        const showLabel = SHOW_CONFIG[showKey].label;
+        const showState = getActiveShowState();
         commitRangeInputs();
 
-        if (controlState.mode === "random" && controlState.remainingCount === 0) {
-            controlHint.textContent = `No tickets remain in ${getRangeLabel()}. Clear pick memory or change the range.`;
+        if (showState.mode === "random" && showState.remainingCount === 0) {
+            controlHint.textContent = `No tickets remain in ${getRangeLabel(showState)} for ${showLabel.toLowerCase()}. Clear pick memory or change the range.`;
             return;
         }
 
         const payload = {
-            mode: controlState.mode,
-            min: controlState.rangeMin,
-            max: controlState.rangeMax
+            mode: showState.mode,
+            min: showState.rangeMin,
+            max: showState.rangeMax
         };
 
-        if (controlState.mode === "scripted") {
+        if (showState.mode === "scripted") {
             const normalizedTicket = normalizeTicket(ticketInput.value);
             if (!normalizedTicket) {
-                controlHint.textContent = "Enter a scripted ticket before sending it to the broadcast room.";
+                controlHint.textContent = `Enter a scripted ticket before sending it to the ${showLabel.toLowerCase()} broadcast room.`;
                 ticketInput.focus();
                 return;
             }
@@ -505,46 +674,61 @@ function bindControls(socket) {
             payload.ticket = normalizedTicket;
         }
 
-        const sent = socket.emit("result", payload);
+        const sent = sockets[showKey].emit("result", payload);
         if (!sent) {
-            controlHint.textContent = "Socket is still reconnecting. Wait for the connection to return.";
+            controlHint.textContent = `${showLabel} socket is still reconnecting. Wait for the connection to return.`;
             return;
         }
 
-        machineStatus.textContent = "Drawing";
-        controlHint.textContent = controlState.mode === "random"
-            ? `Random draw requested for ${getRangeLabel()} in room ${controlState.roomId}.`
-            : `Scripted ticket ${payload.ticket} sent to room ${controlState.roomId}.`;
+        showState.machineStatus = "Drawing";
+        updateStatusUI();
+        controlHint.textContent = showState.mode === "random"
+            ? `${showLabel} random draw requested for ${getRangeLabel(showState)} in room ${showState.roomId}.`
+            : `${showLabel} scripted ticket ${payload.ticket} sent to room ${showState.roomId}.`;
     });
 
     clearHistoryButton.addEventListener("click", () => {
-        const sent = socket.emit("clear_history", {});
+        const showKey = controlState.activeShow;
+        const showLabel = SHOW_CONFIG[showKey].label;
+        const sent = sockets[showKey].emit("clear_history", {});
+
         if (!sent) {
-            controlHint.textContent = "Socket is still reconnecting. Wait before clearing pick memory.";
+            controlHint.textContent = `${showLabel} socket is still reconnecting. Wait before clearing pick memory.`;
             return;
         }
 
-        controlHint.textContent = "Pick history and persistent random memory reset requested for this room.";
+        controlHint.textContent = `${showLabel} pick history and random memory reset requested for this room.`;
     });
 
     sendSubtitleButton.addEventListener("click", () => {
+        const showKey = controlState.activeShow;
+        const showLabel = SHOW_CONFIG[showKey].label;
+        const showState = getActiveShowState();
         const text = (subtitleInput.value || "").trim();
-        const sent = socket.emit("subtitle", { text });
+        const sent = sockets[showKey].emit("subtitle", { text });
+
         if (!sent) {
-            subtitleHint.textContent = "Socket is still reconnecting. Wait for the connection to return.";
+            subtitleHint.textContent = `${showLabel} socket is still reconnecting. Wait for the connection to return.`;
             return;
         }
-        subtitleHint.textContent = text ? `Subtitle updated: "${text}"` : "Subtitle cleared.";
+
+        showState.subtitle = text;
+        subtitleHint.textContent = text ? `${showLabel} subtitle updated.` : `${showLabel} subtitle cleared.`;
     });
 
     clearSubtitleButton.addEventListener("click", () => {
+        const showKey = controlState.activeShow;
+        const showLabel = SHOW_CONFIG[showKey].label;
         subtitleInput.value = "";
-        const sent = socket.emit("subtitle", { text: "" });
+
+        const sent = sockets[showKey].emit("subtitle", { text: "" });
         if (!sent) {
-            subtitleHint.textContent = "Socket is still reconnecting. Wait for the connection to return.";
+            subtitleHint.textContent = `${showLabel} socket is still reconnecting. Wait for the connection to return.`;
             return;
         }
-        subtitleHint.textContent = "Subtitle cleared on the broadcast.";
+
+        getActiveShowState().subtitle = "";
+        subtitleHint.textContent = `${showLabel} subtitle cleared on the broadcast.`;
     });
 
     subtitleInput.addEventListener("keydown", (event) => {
@@ -555,26 +739,34 @@ function bindControls(socket) {
     });
 }
 
-controlState.roomId = ensureRoomId();
-updateSessionUI();
-syncRangeInputs();
-updateModeUI();
-updateResultUI();
-updateHistoryUI();
+ensureShowContext();
+refreshActiveShowUI();
+controlHint.textContent = `This panel is ready to send results to the ${SHOW_CONFIG[controlState.activeShow].label.toLowerCase()} room.`;
 
-const socket = createSocketClient({
-    role: "control",
-    roomId: controlState.roomId,
-    onConnectionChange: setConnectionStatus
+const sockets = Object.fromEntries(Object.keys(SHOW_CONFIG).map((showKey) => ([
+    showKey,
+    createSocketClient({
+        role: "control",
+        showKey,
+        roomId: getShowState(showKey).roomId,
+        onConnectionChange: setConnectionStatus
+    })
+])));
+
+Object.keys(SHOW_CONFIG).forEach((showKey) => {
+    sockets[showKey].on("state", (state) => {
+        applyState(showKey, state);
+    });
+
+    sockets[showKey].on("error", (payload) => {
+        const showState = getShowState(showKey);
+        showState.machineStatus = "Blocked";
+
+        if (controlState.activeShow === showKey) {
+            updateStatusUI();
+            controlHint.textContent = payload?.message || `Unable to send the current ${SHOW_CONFIG[showKey].label.toLowerCase()} result.`;
+        }
+    });
 });
 
-socket.on("state", (state) => {
-    applyState(state);
-});
-
-socket.on("error", (payload) => {
-    machineStatus.textContent = "Blocked";
-    controlHint.textContent = payload?.message || "Unable to send the current result.";
-});
-
-bindControls(socket);
+bindControls(sockets);

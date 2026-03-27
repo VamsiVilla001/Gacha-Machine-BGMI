@@ -237,7 +237,7 @@
 
         .broadcast-label {
             position: absolute;
-            left: 597px;
+            left: 454px;
             top: 946px;
             width: 726px;
             color: #FFF;
@@ -263,7 +263,7 @@
         .reel {
             position: absolute;
             top: 402px;
-            width: 217px;
+            width: 177px;
             height: 353px;
             overflow: hidden;
             isolation: isolate;
@@ -273,18 +273,23 @@
         }
 
         .reel--1 {
-            left: 562px;
+            left: 542px;
             --digit-left: 25;
         }
 
         .reel--2 {
-            left: 847px;
+            left: 758px;
             --digit-left: 29;
         }
 
         .reel--3 {
-            left: 1132px;
+            left: 975px;
             --digit-left: 33;
+        }
+
+        .reel--4 {
+            left: 1191px;
+            --digit-left: 37;
         }
 
         .reel::before,
@@ -296,24 +301,23 @@
         }
 
         .reel::before {
-            fill: linear-gradient(180deg, rgba(0, 0, 0, 0.60) 20.53%, rgba(242, 242, 242, 0.60) 30.06%, rgba(0, 0, 0, 0.60) 68.18%);
+            fill: linear-gradient(180deg, rgba(0, 0, 0, 1) 40%, rgba(242, 242, 242, 0.60) 30.06%, rgba(0, 0, 0, 1) 70%);
             background-blend-mode: screen;
             mix-blend-mode: screen;
         }
 
         .reel::after {
-            background: linear-gradient(180deg, rgba(2, 0, 11, 0.4) 0%, rgba(242, 242, 242, 0.40) 50%, rgba(2, 0, 11, 0.4) 100%);
+            background: linear-gradient(180deg, rgba(2, 0, 11, 0.8) 0%,rgba(255, 255, 255, 0.60) 40%, rgba(242, 242, 242, 0.2) 50%, rgba(2, 0, 11, 0.8) 100%);
             z-index: 2;
         }
 
         .reel-strip {
             position: absolute;
-            left: 0;
+            left: -21px;
             top: 0;
             width: 100%;
             will-change: transform;
-            z-index: 1;
-        }
+            z-index: 1;}
 
         .reel-digit {
             display: flex;
@@ -462,15 +466,19 @@
         <div class="broadcast-label"></div>
 
         <section class="reels" aria-label="Winning ticket digits">
-            <div class="reel reel--1" data-reel-index="0" aria-label="Hundreds digit">
+            <div class="reel reel--1" data-reel-index="0" aria-label="Thousands digit">
                 <div class="reel-strip" aria-hidden="true"></div>
             </div>
 
-            <div class="reel reel--2" data-reel-index="1" aria-label="Tens digit">
+            <div class="reel reel--2" data-reel-index="1" aria-label="Hundreds digit">
                 <div class="reel-strip" aria-hidden="true"></div>
             </div>
 
-            <div class="reel reel--3" data-reel-index="2" aria-label="Ones digit">
+            <div class="reel reel--3" data-reel-index="2" aria-label="Tens digit">
+                <div class="reel-strip" aria-hidden="true"></div>
+            </div>
+
+            <div class="reel reel--4" data-reel-index="3" aria-label="Ones digit">
                 <div class="reel-strip" aria-hidden="true"></div>
             </div>
         </section>
@@ -497,14 +505,15 @@
             const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
             const DIGIT_COUNT = DIGITS.length;
             const REPEAT_COUNT = 12;
+            const TICKET_LENGTH = 4;
             const SPIN_STEP = 235;
             const INITIAL_POSITION = 40;
             const REEL_CENTER_OFFSET = 22;
             const FRAME_WIDTH = 1920;
             const FRAME_HEIGHT = 1080;
-            const SPIN_VELOCITIES = [0.00552, 0.00624, 0.00696];
+            const SPIN_VELOCITIES = [0.0048, 0.00552, 0.00624, 0.00696];
             const MIN_STOP_ROWS = 4;
-            const STOP_DELAYS = [2000, 4000, 6000];
+            const STOP_DELAYS = [1600, 3000, 4500, 6000];
             const shellNode = document.querySelector(".broadcast-shell");
             const canvasNode = document.querySelector(".broadcast-canvas");
             const leverHandleNode = document.querySelector(".machine-handle");
@@ -516,9 +525,9 @@
             const enableSoundButton = document.getElementById("enable-sound-button");
             const previewTicket = getPreviewTicket();
             const demoEnabled = new URL(window.location.href).searchParams.get("demo") === "1";
-            const DEMO_TICKETS = ["284", "631", "907", "145"];
+            const DEMO_TICKETS = ["2841", "6315", "9073", "1452"];
             const DEMO_START_DELAY = 420;
-            const DEMO_INTERVAL = 4400;
+            const DEMO_INTERVAL = STOP_DELAYS[STOP_DELAYS.length - 1] + 1400;
 
             const reelState = Array.from(document.querySelectorAll(".reel")).map((element, index) => ({
                 index,
@@ -537,7 +546,7 @@
 
             const broadcastState = {
                 roomId: getRoomId(),
-                lastTicket: "000",
+                lastTicket: "0".repeat(TICKET_LENGTH),
                 sequenceId: 0,
                 leverTimer: 0,
                 demoMode: demoEnabled,
@@ -589,9 +598,9 @@
             function normalizeTicket(rawTicket) {
                 const digits = String(rawTicket || "")
                     .replace(/\D/g, "")
-                    .slice(-3);
+                    .slice(-TICKET_LENGTH);
 
-                return digits ? digits.padStart(3, "0") : null;
+                return digits ? digits.padStart(TICKET_LENGTH, "0") : null;
             }
 
             function setCurrentDigit(reel, digit) {
@@ -1296,7 +1305,7 @@
             roomIdNode.textContent = broadcastState.roomId;
             resizeFrame();
             populateStrips();
-            setTicketInstant("000", { source: "bootstrap" });
+            setTicketInstant("0000", { source: "bootstrap" });
             setConnectionStatus("connecting");
             window.addEventListener("resize", resizeFrame);
 
@@ -1329,14 +1338,14 @@
                     setTicketInstant(state.lastTicket);
                 }
 
-                if (typeof state.subtitle === "string") {
+                if (subtitleNode && typeof state.subtitle === "string") {
                     subtitleNode.textContent = state.subtitle;
                     subtitleNode.classList.toggle("is-visible", state.subtitle.length > 0);
                 }
             });
 
             socket.on("subtitle", (payload) => {
-                if (!payload || typeof payload.text !== "string") return;
+                if (!subtitleNode || !payload || typeof payload.text !== "string") return;
                 subtitleNode.textContent = payload.text;
                 subtitleNode.classList.toggle("is-visible", payload.text.length > 0);
             });

@@ -3,7 +3,7 @@ const path = require("path");
 const http = require("http");
 const { WebSocketServer } = require("ws");
 
-const PORT = Number.parseInt(process.env.PORT || "3443", 10);
+const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const ROOT = __dirname;
 const DEFAULT_ROOM_ID = "default";
 const DEFAULT_SHOW_KEY = "gold";
@@ -17,7 +17,7 @@ const STORAGE_FILES = Object.freeze({
 });
 const LEGACY_STORAGE_FILE = path.join(ROOT, "picked-history.json");
 const MIN_TICKET_VALUE = 0;
-const MAX_TICKET_VALUE = 999;
+const MAX_TICKET_VALUE = 9999;
 const MAX_HISTORY_ITEMS = 50;
 
 const roomStores = new Map([
@@ -46,13 +46,13 @@ function sanitizeShowKey(rawShowKey) {
 function normalizeTicket(rawTicket) {
     const digits = String(rawTicket || "")
         .replace(/\D/g, "")
-        .slice(-3);
+        .slice(-4);
 
-    return digits ? digits.padStart(3, "0") : null;
+    return digits ? digits.padStart(4, "0") : null;
 }
 
 function formatTicketValue(value) {
-    return String(clamp(Number(value) || 0, MIN_TICKET_VALUE, MAX_TICKET_VALUE)).padStart(3, "0");
+    return String(clamp(Number(value) || 0, MIN_TICKET_VALUE, MAX_TICKET_VALUE)).padStart(4, "0");
 }
 
 function normalizeMode(rawMode) {
@@ -326,7 +326,7 @@ function resolveResultTicket(roomState, payload = {}) {
     const ticket = normalizeTicket(payload.ticket);
     if (!ticket) {
         return {
-            error: "A 3-digit ticket is required in scripted mode."
+            error: "A 4-digit ticket is required in scripted mode."
         };
     }
 

@@ -34,7 +34,7 @@ const subtitleHint = document.getElementById("subtitle-hint");
 const FALLBACK_HTTP_ORIGIN = "http://127.0.0.1:3000";
 const FALLBACK_WS_ORIGIN = "ws://127.0.0.1:3000";
 const MIN_TICKET_VALUE = 0;
-const MAX_TICKET_VALUE = 999;
+const MAX_TICKET_VALUE = 9999;
 const DEFAULT_MODE = "random";
 const DEFAULT_SHOW_KEY = "gold";
 const SHOW_CONFIG = Object.freeze({
@@ -94,9 +94,9 @@ function sanitizeShowKey(rawShowKey) {
 function normalizeTicket(rawTicket) {
     const digits = String(rawTicket || "")
         .replace(/\D/g, "")
-        .slice(-3);
+        .slice(-4);
 
-    return digits ? digits.padStart(3, "0") : null;
+    return digits ? digits.padStart(4, "0") : null;
 }
 
 function normalizeMode(rawMode) {
@@ -106,7 +106,7 @@ function normalizeMode(rawMode) {
 function normalizeRangeValue(rawValue, fallbackValue) {
     const digits = String(rawValue ?? "")
         .replace(/\D/g, "")
-        .slice(-3);
+        .slice(-4);
 
     if (!digits) {
         return fallbackValue;
@@ -130,7 +130,7 @@ function normalizeRangePair(minValue, maxValue, fallbackMin, fallbackMax) {
 }
 
 function formatTicketValue(value) {
-    return String(clamp(Number(value) || 0, MIN_TICKET_VALUE, MAX_TICKET_VALUE)).padStart(3, "0");
+    return String(clamp(Number(value) || 0, MIN_TICKET_VALUE, MAX_TICKET_VALUE)).padStart(4, "0");
 }
 
 function generateRoomId() {
@@ -390,7 +390,7 @@ function updateModeUI() {
     randomModeButton.setAttribute("aria-pressed", String(isRandom));
 
     ticketInput.disabled = isRandom;
-    ticketInput.placeholder = isRandom ? "Auto draw" : "781";
+    ticketInput.placeholder = isRandom ? "Auto draw" : "0781";
     sendResultButton.textContent = isRandom ? `Draw ${showLabel} Result` : `Send ${showLabel} Ticket`;
 
     if (isRandom) {
@@ -402,7 +402,7 @@ function updateModeUI() {
         return;
     }
 
-    ticketHelp.textContent = `${showLabel} scripted mode sends the exact 3-digit ticket you enter to that broadcast room.`;
+    ticketHelp.textContent = `${showLabel} scripted mode sends the exact 4-digit ticket you enter to that broadcast room.`;
     rangeHelp.textContent =
         showState.usedCount > 0
             ? `${showLabel} pick memory currently tracks ${showState.usedCount} used ticket${showState.usedCount === 1 ? "" : "s"} for future random draws.`
@@ -458,16 +458,11 @@ function updateHistoryUI() {
 }
 
 function updateSubtitleUI() {
-    const isGoldActive = controlState.activeShow === "gold";
-
-    subtitlePanel.hidden = isGoldActive;
-    subtitleInput.disabled = isGoldActive;
-    sendSubtitleButton.disabled = isGoldActive;
-    clearSubtitleButton.disabled = isGoldActive;
-
-    if (!isGoldActive) {
-        subtitleInput.value = getActiveShowState().subtitle || "";
-    }
+    subtitlePanel.hidden = false;
+    subtitleInput.disabled = false;
+    sendSubtitleButton.disabled = false;
+    clearSubtitleButton.disabled = false;
+    subtitleInput.value = getActiveShowState().subtitle || "";
 }
 
 function refreshActiveShowUI(sessionMessage) {
@@ -549,7 +544,7 @@ function commitRangeInputs() {
 function sanitizeNumericInput(inputNode) {
     inputNode.value = String(inputNode.value || "")
         .replace(/\D/g, "")
-        .slice(0, 3);
+        .slice(0, 4);
 }
 
 function setActiveShow(showKey) {

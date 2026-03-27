@@ -34,14 +34,14 @@
       }
     },
     "e6f8070f-a2d5-4854-8529-395958130cd6": {
-      "lastTicket": "130",
+      "lastTicket": "0130",
       "history": [
-        "130",
-        "841"
+        "0130",
+        "0841"
       ],
       "usedTickets": [
-        "841",
-        "130"
+        "0841",
+        "0130"
       ],
       "subtitle": "GENERAL PASS HOLDERS",
       "settings": {
@@ -59,6 +59,34 @@
         "mode": "random",
         "min": 0,
         "max": 999
+      }
+    },
+    "36fcac2c-bc25-4e02-b7df-ccefc2f88772": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "61e6ca75-12d9-47db-9fb9-29f912ea329c": {
+      "lastTicket": "7234",
+      "history": [
+        "7234",
+        "5737"
+      ],
+      "usedTickets": [
+        "5737",
+        "7234"
+      ],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
       }
     }
   }

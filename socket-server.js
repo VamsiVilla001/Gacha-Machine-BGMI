@@ -9,7 +9,8 @@ const DEFAULT_ROOM_ID = "default";
 const DEFAULT_SHOW_KEY = "gold";
 const SHOW_KEYS = Object.freeze({
     gold: "gold",
-    silver: "silver"
+    silver: "silver",
+    ccv: "ccv"
 });
 const STORAGE_FILES = Object.freeze({
     [SHOW_KEYS.gold]: path.join(ROOT, "picked-history-gold.json"),
@@ -24,6 +25,17 @@ const roomStores = new Map([
     [SHOW_KEYS.gold, new Map()],
     [SHOW_KEYS.silver, new Map()]
 ]);
+
+// CCV counter — in-memory only, no file persistence needed
+const ccvRooms = new Map();
+
+function getCcvRoom(roomId) {
+    const id = sanitizeRoomId(roomId);
+    if (!ccvRooms.has(id)) {
+        ccvRooms.set(id, { target: 0, running: false, title: "" });
+    }
+    return ccvRooms.get(id);
+}
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -40,7 +52,9 @@ function sanitizeRoomId(rawRoomId) {
 }
 
 function sanitizeShowKey(rawShowKey) {
-    return rawShowKey === SHOW_KEYS.silver ? SHOW_KEYS.silver : DEFAULT_SHOW_KEY;
+    if (rawShowKey === SHOW_KEYS.silver) return SHOW_KEYS.silver;
+    if (rawShowKey === SHOW_KEYS.ccv) return SHOW_KEYS.ccv;
+    return DEFAULT_SHOW_KEY;
 }
 
 function normalizeTicket(rawTicket) {
@@ -195,8 +209,10 @@ function saveStorage(showKey) {
     }
 }
 
+const PERSISTED_SHOW_KEYS = [SHOW_KEYS.gold, SHOW_KEYS.silver];
+
 function loadAllStorage() {
-    Object.values(SHOW_KEYS).forEach((showKey) => {
+    PERSISTED_SHOW_KEYS.forEach((showKey) => {
         loadStorage(showKey);
     });
 }
@@ -365,6 +381,38 @@ wss.on("connection", (socket, request) => {
     socket.showKey = sanitizeShowKey(url.searchParams.get("show"));
     socket.roomId = sanitizeRoomId(url.searchParams.get("room"));
 
+    // ── CCV counter — separate routing, no ticket state ──────────────
+    if (socket.showKey === SHOW_KEYS.ccv) {
+        const ccvState = getCcvRoom(socket.roomId);
+        sendJson(socket, { event: "ccv_state", data: { ...ccvState, roomId: socket.roomId } });
+
+        socket.on("message", (rawMessage) => {
+            let message;
+            try { message = JSON.parse(String(rawMessage)); } catch { return; }
+            if (!message || message.event !== "ccv_update") return;
+
+            const room = getCcvRoom(socket.roomId);
+            const data = message.data || {};
+
+            if (typeof data.target === "number" && Number.isFinite(data.target)) {
+                room.target = Math.max(0, Math.floor(data.target));
+            }
+            if (typeof data.running === "boolean") {
+                room.running = data.running;
+            }
+            if (typeof data.title === "string") {
+                room.title = data.title.slice(0, 100);
+            }
+
+            broadcast(
+                { event: "ccv_state", data: { ...room, roomId: socket.roomId } },
+                (client) => client.showKey === SHOW_KEYS.ccv && client.roomId === socket.roomId
+            );
+        });
+        return;
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     sendJson(socket, {
         event: "state",
         data: buildStatePayload(socket.showKey, socket.roomId)
@@ -435,7 +483,7 @@ wss.on("connection", (socket, request) => {
 });
 
 loadAllStorage();
-Object.values(SHOW_KEYS).forEach((showKey) => {
+PERSISTED_SHOW_KEYS.forEach((showKey) => {
     saveStorage(showKey);
 });
 server.listen(PORT, () => {

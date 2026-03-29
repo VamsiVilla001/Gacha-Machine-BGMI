@@ -105,6 +105,41 @@
             <button type="button" id="clear-history-button" class="secondary-action-button">Clear Pick Memory</button>
             <p id="control-hint">This panel sends a draw request to the selected room. The broadcast page spins only when a control result is emitted.</p>
         </section>
+
+        <!-- ── CCV Counter ─────────────────────────────────────────────── -->
+        <section class="panel-card panel-card-ccv" id="ccv-panel">
+            <div class="ccv-panel-header">
+                <h2>YouTube CCV Counter</h2>
+                <div class="status-chip status-chip-dark" id="ccv-connection-status">Connecting</div>
+            </div>
+            <div class="session-grid">
+                <label class="field">
+                    <span>CCV Broadcast Link</span>
+                    <input id="ccv-broadcast-link" type="text" readonly>
+                </label>
+            </div>
+            <div class="session-actions">
+                <button type="button" id="ccv-open-button" class="secondary-action-button">Open CCV Broadcast</button>
+                <button type="button" id="ccv-copy-button" class="secondary-action-button">Copy Link</button>
+            </div>
+            <label class="field field-stacked" style="margin-top:12px">
+                <span>Broadcast Title</span>
+                <input id="ccv-title-input" type="text" maxlength="100" placeholder="e.g. BGIS 2026 — Grand Finals" autocomplete="off">
+            </label>
+            <div class="session-actions" style="margin-top:10px">
+                <button type="button" id="ccv-send-title-button" class="secondary-action-button">Send Title</button>
+                <button type="button" id="ccv-clear-title-button" class="secondary-action-button">Clear Title</button>
+            </div>
+            <label class="field field-stacked" style="margin-top:16px">
+                <span>Target Viewer Count</span>
+                <input id="ccv-target-input" type="text" inputmode="numeric" placeholder="50000" autocomplete="off">
+            </label>
+            <div class="ccv-counter-actions">
+                <button type="button" id="ccv-start-button" class="knob-toggle-button ccv-start-btn">Start Counter</button>
+                <button type="button" id="ccv-stop-button" class="secondary-action-button">Stop Counter</button>
+            </div>
+            <p id="ccv-hint">Enter the live viewer target and click Start. The broadcast screen will count up to that number then blast confetti.</p>
+        </section>
     </main>
 
     <script src="control.js"></script>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0, user-scalable=no">
+    <title>CCV Counter — Live Viewers</title>
+    <style>
+        @font-face {
+            font-family: "Countach Broadcast Bold";
+            src: url("./assets/fonts/Countach-Bold.otf") format("opentype");
+            font-style: normal;
+            font-weight: 700;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: "Countach Broadcast";
+            src: url("./assets/fonts/Countach-Medium.otf") format("opentype");
+            font-style: normal;
+            font-weight: 500;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: "Industry Broadcast";
+            src: url("./assets/fonts/IndustryTest-Bold.otf") format("opentype");
+            font-style: normal;
+            font-weight: 700;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: "Industry Broadcast";
+            src: url("./assets/fonts/IndustryTest-Medium.otf") format("opentype");
+            font-style: normal;
+            font-weight: 500;
+            font-display: block;
+        }
+
+        :root {
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #02000b;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            font-synthesis: none;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: geometricPrecision;
+        }
+
+        img {
+            display: block;
+            max-width: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+
+        /* ── Shell ───────────────────────────────────────────────────── */
+
+        .broadcast-shell {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+        }
+
+        .broadcast-canvas {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            transform-origin: top left;
+        }
+
+        /* ── Background ──────────────────────────────────────────────── */
+
+        .bg-image {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1920px;
+            height: 1080px;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+
+        /* ── Title bar ───────────────────────────────────────────────── */
+
+        .broadcast-title-bar {
+            position: absolute;
+            left: 0;
+            top: 80px;
+            width: 1920px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 6;
+        }
+
+        .broadcast-main-title {
+            color: #ffffff;
+            font-family: "Countach Broadcast Bold", sans-serif;
+            font-size: 160px;
+            line-height: 0.88;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            text-align: center;
+            text-transform: uppercase;
+            text-align: center;
+            color: #ffffff;
+            text-shadow: none;
+            opacity: 0;
+            transition: opacity 400ms ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 1700px;
+        }
+
+        .broadcast-main-title.is-visible {
+            opacity: 1;
+        }
+
+        /* ── Content area ────────────────────────────────────────────── */
+
+        .content-area {
+            position: absolute;
+            left: 0;
+            top: 160px;
+            width: 1920px;
+            height: 920px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-around;
+            gap: 0;
+            z-index: 5;
+        }
+
+        /* ── Logo side ───────────────────────────────────────────────── */
+
+        .logo-side {
+            width: 620px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-side img {
+            width: 360px;
+            height: auto;
+            filter: none;
+        }
+
+        /* ── Divider ─────────────────────────────────────────────────── */
+
+        .vertical-divider {
+            width: 3px;
+            height: 440px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, transparent, #e6bd12 20%, #f4c430 50%, #e6bd12 80%, transparent);
+            border-radius: 2px;
+        }
+
+        /* ── Counter side ────────────────────────────────────────────── */
+
+        .counter-side {
+            width: 1000px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        /* ── YouTube icon ────────────────────────────────────────────── */
+
+        .yt-icon {
+            display: block;
+            flex-shrink: 0;
+        }
+
+        /* ── Counter number ──────────────────────────────────────────── */
+
+        .counter-number {
+            font-family: "Countach Broadcast Bold", sans-serif;
+            font-size: 260px;
+            font-weight: 700;
+            line-height: 0.88;
+            letter-spacing: 0.02em;
+            color: #f4c430;
+            text-align: center;
+            text-shadow: none;
+            will-change: transform;
+            display: block;
+            width: 100%;
+        }
+
+        .counter-number.is-reached {
+            animation: counter-celebrate 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+        }
+
+        @keyframes counter-celebrate {
+            0%   { transform: scale(1); }
+            25%  { transform: scale(1.06); }
+            50%  { transform: scale(0.97); }
+            75%  { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        /* ── Confetti canvas ─────────────────────────────────────────── */
+
+        .confetti-canvas {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            pointer-events: none;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div class="broadcast-shell">
+        <!-- Confetti layer -->
+        <canvas class="confetti-canvas" id="confetti-canvas" width="1920" height="1080"></canvas>
+
+        <div class="broadcast-canvas" id="broadcast-canvas">
+            <!-- Background -->
+            <img class="bg-image" src="./assets/MainScreen.webp" alt="" aria-hidden="true">
+
+            <!-- Title bar -->
+            <div class="broadcast-title-bar">
+                <span class="broadcast-main-title" id="main-title"></span>
+            </div>
+
+            <!-- Main content -->
+            <div class="content-area">
+
+                <!-- Left: Logo -->
+                <div class="logo-side">
+                    <img src="https://bgmi-lan-assets.s3.ap-south-2.amazonaws.com/BGIS_2026_Logo.png" alt="BGIS 2026">
+                </div>
+
+                <!-- Divider -->
+                <div class="vertical-divider"></div>
+
+                <!-- Right: Counter -->
+                <div class="counter-side">
+                    <!-- YouTube icon (official red pill shape) -->
+                    <svg class="yt-icon" width="160" height="112" viewBox="0 0 159.1 111.1" xmlns="http://www.w3.org/2000/svg" aria-label="YouTube">
+                        <path d="M155.8 17.4A19.9 19.9 0 0 0 141.8 3.4C129.4 0 79.5 0 79.5 0S29.7 0 17.2 3.4A19.9 19.9 0 0 0 3.2 17.4C0 29.8 0 55.5 0 55.5s0 25.8 3.2 38.2a19.9 19.9 0 0 0 14 14C29.7 111.1 79.5 111.1 79.5 111.1s49.8 0 62.3-3.4a19.9 19.9 0 0 0 14-14c3.3-12.4 3.3-38.2 3.3-38.2s0-25.7-3.3-38.1z" fill="#FF0000"/>
+                        <path d="M63.6 79.1l41.7-23.6-41.7-23.6v47.2z" fill="#ffffff"/>
+                    </svg>
+                    <span class="counter-number" id="counter-display" aria-live="polite" aria-label="viewer count">0,000+</span>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            // ── Confetti ──────────────────────────────────────────────────────
+
+            const confettiCanvas = document.getElementById("confetti-canvas");
+            const confettiCtx = confettiCanvas.getContext("2d");
+            let confettiParticles = [];
+            let confettiAnimId  = null;
+            let confettiLooping = false;
+
+            const CONFETTI_COLORS = [
+                "#e6bd12", "#f4c430", "#ffd700",
+                "#5901ef", "#9b4dff", "#c084fc",
+                "#ffffff", "#00d4ff", "#ff6b6b"
+            ];
+
+            function spawnBurst() {
+                const W = 1920;
+                const H = 1080;
+
+                const origins = [
+                    { x: W * 0.15, y: H * 0.75 },
+                    { x: W * 0.50, y: H * 0.85 },
+                    { x: W * 0.85, y: H * 0.75 }
+                ];
+
+                origins.forEach((origin) => {
+                    for (let i = 0; i < 90; i++) {
+                        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.1;
+                        const speed = 10 + Math.random() * 22;
+                        confettiParticles.push({
+                            x: origin.x,
+                            y: origin.y,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            rotation: Math.random() * 360,
+                            rotSpeed: (Math.random() - 0.5) * 14,
+                            color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+                            w: 9 + Math.random() * 12,
+                            h: 5 + Math.random() * 7,
+                            alpha: 1,
+                            decay: 0.010 + Math.random() * 0.007,
+                            shape: Math.random() > 0.4 ? "rect" : "circle"
+                        });
+                    }
+                });
+            }
+
+            function launchConfetti() {
+                confettiLooping = true;
+                spawnBurst();
+                if (!confettiAnimId) {
+                    runConfetti();
+                }
+            }
+
+            function runConfetti() {
+                confettiCtx.clearRect(0, 0, 1920, 1080);
+                confettiParticles = confettiParticles.filter((p) => p.alpha > 0.01);
+
+                confettiParticles.forEach((p) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.55;
+                    p.vx *= 0.988;
+                    p.rotation += p.rotSpeed;
+                    p.alpha -= p.decay;
+
+                    confettiCtx.save();
+                    confettiCtx.globalAlpha = Math.max(0, p.alpha);
+                    confettiCtx.translate(p.x, p.y);
+                    confettiCtx.rotate((p.rotation * Math.PI) / 180);
+                    confettiCtx.fillStyle = p.color;
+
+                    if (p.shape === "circle") {
+                        confettiCtx.beginPath();
+                        confettiCtx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+                        confettiCtx.fill();
+                    } else {
+                        confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    }
+
+                    confettiCtx.restore();
+                });
+
+                if (confettiParticles.length > 0) {
+                    confettiAnimId = requestAnimationFrame(runConfetti);
+                } else if (confettiLooping) {
+                    spawnBurst();
+                    confettiAnimId = requestAnimationFrame(runConfetti);
+                } else {
+                    confettiAnimId = null;
+                    confettiCtx.clearRect(0, 0, 1920, 1080);
+                }
+            }
+
+            // ── DOM refs ──────────────────────────────────────────────────────
+
+            const counterDisplay = document.getElementById("counter-display");
+            const mainTitle      = document.getElementById("main-title");
+
+            // ── Counter state ─────────────────────────────────────────────────
+
+            let currentValue    = 0;
+            let targetValue     = 0;
+            let counterRunning  = false;
+            let animFrameId     = null;
+            let animStartTime   = null;
+            let animFromValue   = 0;
+            const COUNTER_DURATION_MS = 8000;
+
+            function formatNumber(n) {
+                return Math.round(n).toLocaleString("en-IN", { minimumIntegerDigits: 4 }) + "+";
+            }
+
+            function setCounterDisplay(value) {
+                currentValue = Math.round(value);
+                counterDisplay.textContent = formatNumber(currentValue);
+            }
+
+            function stopAnimation() {
+                if (animFrameId) {
+                    cancelAnimationFrame(animFrameId);
+                    animFrameId = null;
+                }
+            }
+
+            function easeOutCubic(t) {
+                return 1 - Math.pow(1 - t, 3);
+            }
+
+            function startCountUp(from, to) {
+                stopAnimation();
+                counterRunning = true;
+                animFromValue  = from;
+                animStartTime  = null;
+
+                counterDisplay.classList.remove("is-reached");
+                counterDisplay.classList.add("is-running");
+
+                function step(timestamp) {
+                    if (!animStartTime) animStartTime = timestamp;
+                    const elapsed  = timestamp - animStartTime;
+                    const progress = Math.min(elapsed / COUNTER_DURATION_MS, 1);
+                    const eased    = easeOutCubic(progress);
+                    const value    = animFromValue + (to - animFromValue) * eased;
+
+                    setCounterDisplay(value);
+
+                    if (progress < 1) {
+                        animFrameId = requestAnimationFrame(step);
+                    } else {
+                        animFrameId    = null;
+                        counterRunning = false;
+                        counterDisplay.classList.remove("is-running");
+                        counterDisplay.classList.add("is-reached");
+                        launchConfetti();
+                    }
+                }
+
+                animFrameId = requestAnimationFrame(step);
+            }
+
+            function stopCounter() {
+                stopAnimation();
+                counterRunning  = false;
+                confettiLooping = false;
+                counterDisplay.classList.remove("is-running", "is-reached");
+            }
+
+            // ── URL helpers ───────────────────────────────────────────────────
+
+            const FALLBACK_WS_ORIGIN = "ws://127.0.0.1:3000";
+
+            function getWebSocketOrigin() {
+                if (location.protocol === "https:") return `wss://${location.host}`;
+                if (location.protocol === "http:")  return `ws://${location.host}`;
+                return FALLBACK_WS_ORIGIN;
+            }
+
+            function sanitizeRoomId(raw) {
+                return String(raw || "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9_-]/g, "")
+                    .slice(0, 64) || "default";
+            }
+
+            // ── Broadcast state ───────────────────────────────────────────────
+
+            const urlParams = new URL(window.location.href).searchParams;
+            const roomId    = sanitizeRoomId(urlParams.get("room"));
+
+            // ── WebSocket ─────────────────────────────────────────────────────
+
+            function applyState(data) {
+                if (!data || typeof data !== "object") return;
+
+                const newTarget  = typeof data.target  === "number" ? Math.max(0, Math.floor(data.target)) : targetValue;
+                const newRunning = typeof data.running === "boolean" ? data.running : false;
+
+                targetValue = newTarget;
+
+                // Update title
+                if (typeof data.title === "string") {
+                    mainTitle.textContent = data.title;
+                    mainTitle.classList.toggle("is-visible", data.title.length > 0);
+                }
+
+                if (newRunning && newTarget > 0) {
+                    stopAnimation();
+                    counterRunning = false;
+                    setCounterDisplay(0);
+                    startCountUp(0, newTarget);
+                } else if (!newRunning) {
+                    stopCounter();
+                }
+            }
+
+            let socket = null;
+            let connectionId = 0;
+
+            function connect() {
+                const nextId = ++connectionId;
+                const wsUrl  = new URL("/ws", `${getWebSocketOrigin()}/`);
+                wsUrl.searchParams.set("role", "broadcast");
+                wsUrl.searchParams.set("show", "ccv");
+                wsUrl.searchParams.set("room", roomId);
+
+                socket = new WebSocket(wsUrl.toString());
+
+                socket.addEventListener("open", () => {
+                    if (nextId !== connectionId) { socket.close(); return; }
+                });
+
+                socket.addEventListener("message", (event) => {
+                    if (nextId !== connectionId) return;
+                    let msg;
+                    try { msg = JSON.parse(event.data); } catch { return; }
+                    if (msg && msg.event === "ccv_state") {
+                        applyState(msg.data);
+                    }
+                });
+
+                socket.addEventListener("close", () => {
+                    if (nextId !== connectionId) return;
+                    setTimeout(() => {
+                        if (nextId === connectionId) connect();
+                    }, 1200);
+                });
+            }
+
+            connect();
+        }());
+    </script>
+</body>
+</html>

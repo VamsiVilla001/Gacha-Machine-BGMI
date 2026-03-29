@@ -779,3 +779,182 @@ Object.keys(SHOW_CONFIG).forEach((showKey) => {
 });
 
 bindControls(sockets);
+
+// ── CCV Counter ───────────────────────────────────────────────────────────────
+
+const ccvTitleInput        = document.getElementById("ccv-title-input");
+const ccvSendTitleButton   = document.getElementById("ccv-send-title-button");
+const ccvClearTitleButton  = document.getElementById("ccv-clear-title-button");
+const ccvTargetInput       = document.getElementById("ccv-target-input");
+const ccvStartButton       = document.getElementById("ccv-start-button");
+const ccvStopButton        = document.getElementById("ccv-stop-button");
+const ccvBroadcastLinkInput = document.getElementById("ccv-broadcast-link");
+const ccvOpenButton        = document.getElementById("ccv-open-button");
+const ccvCopyButton        = document.getElementById("ccv-copy-button");
+const ccvConnectionStatus  = document.getElementById("ccv-connection-status");
+const ccvHint              = document.getElementById("ccv-hint");
+
+const ccvControlState = {
+    roomId: "",
+    target: 0,
+    running: false,
+    connectionStatus: "connecting"
+};
+
+function initCcvRoom() {
+    const url = new URL(window.location.href);
+    let roomId = sanitizeRoomId(url.searchParams.get("ccvRoom"));
+    if (!roomId) {
+        roomId = generateRoomId();
+        url.searchParams.set("ccvRoom", roomId);
+        window.history.replaceState({}, "", url);
+    }
+    ccvControlState.roomId = roomId;
+}
+
+function buildCcvBroadcastUrl() {
+    const url = new URL("/broadcastCCV.html", `${getHttpOrigin()}/`);
+    url.searchParams.set("room", ccvControlState.roomId);
+    url.searchParams.set("show", "ccv");
+    return url.toString();
+}
+
+function buildCcvWsUrl() {
+    const url = new URL("/ws", `${getWebSocketOrigin()}/`);
+    url.searchParams.set("role", "control");
+    url.searchParams.set("show", "ccv");
+    url.searchParams.set("room", ccvControlState.roomId);
+    return url.toString();
+}
+
+function updateCcvStatusUI() {
+    const labels = { connecting: "Connecting", connected: "Connected", reconnecting: "Reconnecting" };
+    ccvConnectionStatus.textContent = labels[ccvControlState.connectionStatus] || "Disconnected";
+    ccvBroadcastLinkInput.value = buildCcvBroadcastUrl();
+}
+
+function createCcvSocket() {
+    let socket = null;
+    let connId = 0;
+
+    function connect() {
+        const thisId = ++connId;
+        socket = new WebSocket(buildCcvWsUrl());
+        ccvControlState.connectionStatus = "connecting";
+        updateCcvStatusUI();
+
+        socket.addEventListener("open", () => {
+            if (thisId !== connId) { socket.close(); return; }
+            ccvControlState.connectionStatus = "connected";
+            updateCcvStatusUI();
+        });
+
+        socket.addEventListener("message", (event) => {
+            if (thisId !== connId) return;
+            let msg;
+            try { msg = JSON.parse(event.data); } catch { return; }
+            if (msg && msg.event === "ccv_state" && msg.data) {
+                ccvControlState.target  = msg.data.target  || 0;
+                ccvControlState.running = msg.data.running || false;
+                if (typeof msg.data.title === "string" && ccvTitleInput.value === "") {
+                    ccvTitleInput.value = msg.data.title;
+                }
+            }
+        });
+
+        socket.addEventListener("close", () => {
+            if (thisId !== connId) return;
+            ccvControlState.connectionStatus = "reconnecting";
+            updateCcvStatusUI();
+            window.setTimeout(() => { if (thisId === connId) connect(); }, 1000);
+        });
+    }
+
+    connect();
+
+    return {
+        emit(data) {
+            if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+            socket.send(JSON.stringify({ event: "ccv_update", data }));
+            return true;
+        }
+    };
+}
+
+initCcvRoom();
+updateCcvStatusUI();
+const ccvSocket = createCcvSocket();
+
+ccvSendTitleButton.addEventListener("click", () => {
+    const title = (ccvTitleInput.value || "").trim();
+    if (!ccvSocket.emit({ title, target: ccvControlState.target, running: ccvControlState.running })) {
+        ccvHint.textContent = "CCV socket is reconnecting. Try again shortly.";
+        return;
+    }
+    ccvHint.textContent = title ? `Title updated: "${title}"` : "Title cleared on broadcast.";
+});
+
+ccvClearTitleButton.addEventListener("click", () => {
+    ccvTitleInput.value = "";
+    if (!ccvSocket.emit({ title: "", target: ccvControlState.target, running: ccvControlState.running })) {
+        ccvHint.textContent = "CCV socket is reconnecting. Try again shortly.";
+        return;
+    }
+    ccvHint.textContent = "Title cleared on broadcast.";
+});
+
+ccvTitleInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); ccvSendTitleButton.click(); }
+});
+
+ccvTargetInput.addEventListener("input", () => {
+    ccvTargetInput.value = ccvTargetInput.value.replace(/\D/g, "").slice(0, 8);
+});
+
+ccvStartButton.addEventListener("click", () => {
+    const raw    = (ccvTargetInput.value || "").replace(/\D/g, "");
+    const target = Math.max(0, parseInt(raw, 10) || 0);
+
+    if (!target) {
+        ccvHint.textContent = "Enter a target viewer count before starting.";
+        ccvTargetInput.focus();
+        return;
+    }
+
+    if (!ccvSocket.emit({ target, running: true })) {
+        ccvHint.textContent = "CCV socket is reconnecting. Try again shortly.";
+        return;
+    }
+
+    ccvControlState.target  = target;
+    ccvControlState.running = true;
+    ccvHint.textContent = `Counter started — counting up to ${target.toLocaleString()} viewers on the broadcast screen.`;
+});
+
+ccvStopButton.addEventListener("click", () => {
+    const sent = ccvSocket.emit({ target: ccvControlState.target, running: false });
+    if (!sent) {
+        ccvHint.textContent = "CCV socket is reconnecting. Try again shortly.";
+        return;
+    }
+    ccvControlState.running = false;
+    ccvHint.textContent = "Counter stopped.";
+});
+
+ccvOpenButton.addEventListener("click", () => {
+    window.open(buildCcvBroadcastUrl(), "_blank", "noopener");
+});
+
+ccvCopyButton.addEventListener("click", async () => {
+    const link = buildCcvBroadcastUrl();
+    try {
+        await navigator.clipboard.writeText(link);
+        ccvHint.textContent = "CCV broadcast link copied to clipboard.";
+    } catch {
+        ccvBroadcastLinkInput.focus();
+        ccvBroadcastLinkInput.select();
+        ccvHint.textContent = "Clipboard access failed — copy the selected link manually.";
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────

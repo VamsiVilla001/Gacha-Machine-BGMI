@@ -160,7 +160,7 @@
         /* ── Logo side ───────────────────────────────────────────────── */
 
         .logo-side {
-            width: 620px;
+            /* width: 620px; */
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -390,13 +390,15 @@
             let currentValue    = 0;
             let targetValue     = 0;
             let counterRunning  = false;
+            let counterStarted  = false;
             let animFrameId     = null;
             let animStartTime   = null;
             let animFromValue   = 0;
             const COUNTER_DURATION_MS = 8000;
 
             function formatNumber(n) {
-                return Math.round(n).toLocaleString("en-US", { minimumIntegerDigits: 6 });
+                const base = Math.round(n).toLocaleString("en-US", { minimumIntegerDigits: 6 });
+                return counterStarted ? base + "+" : base;
             }
 
             function setCounterDisplay(value) {
@@ -418,6 +420,7 @@
             function startCountUp(from, to) {
                 stopAnimation();
                 counterRunning = true;
+                counterStarted = true;
                 animFromValue  = from;
                 animStartTime  = null;
 
@@ -450,6 +453,7 @@
             function stopCounter() {
                 stopAnimation();
                 counterRunning  = false;
+                counterStarted  = false;
                 confettiLooping = false;
                 counterDisplay.classList.remove("is-running", "is-reached");
             }

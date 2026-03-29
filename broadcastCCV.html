@@ -274,7 +274,7 @@
                         <path d="M155.8 17.4A19.9 19.9 0 0 0 141.8 3.4C129.4 0 79.5 0 79.5 0S29.7 0 17.2 3.4A19.9 19.9 0 0 0 3.2 17.4C0 29.8 0 55.5 0 55.5s0 25.8 3.2 38.2a19.9 19.9 0 0 0 14 14C29.7 111.1 79.5 111.1 79.5 111.1s49.8 0 62.3-3.4a19.9 19.9 0 0 0 14-14c3.3-12.4 3.3-38.2 3.3-38.2s0-25.7-3.3-38.1z" fill="#FF0000"/>
                         <path d="M63.6 79.1l41.7-23.6-41.7-23.6v47.2z" fill="#ffffff"/>
                     </svg>
-                    <span class="counter-number" id="counter-display" aria-live="polite" aria-label="viewer count">0,000+</span>
+                    <span class="counter-number" id="counter-display" aria-live="polite" aria-label="viewer count">000,000</span>
                 </div>
 
             </div>
@@ -396,7 +396,7 @@
             const COUNTER_DURATION_MS = 8000;
 
             function formatNumber(n) {
-                return Math.round(n).toLocaleString("en-IN", { minimumIntegerDigits: 4 }) + "+";
+                return Math.round(n).toLocaleString("en-US", { minimumIntegerDigits: 6 });
             }
 
             function setCounterDisplay(value) {

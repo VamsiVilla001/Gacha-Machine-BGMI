@@ -593,6 +593,86 @@
         "min": 0,
         "max": 9999
       }
+    },
+    "room-mmn7p7uc-i4skgf": {
+      "lastTicket": "0000",
+      "history": [
+        "0000",
+        "0000",
+        "0252",
+        "0000",
+        "6299"
+      ],
+      "usedTickets": [
+        "6299",
+        "0000",
+        "0252"
+      ],
+      "subtitle": "GOLDEN SPIN (PAID PASS)",
+      "settings": {
+        "mode": "scripted",
+        "min": 1,
+        "max": 2000
+      }
+    },
+    "room-mn8r8t2a-71fra0": {
+      "lastTicket": "6994",
+      "history": [
+        "6994"
+      ],
+      "usedTickets": [
+        "6994"
+      ],
+      "subtitle": "ABCD",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "room-mn9yt9ec-qv6t8s": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "room-mn9ytail-cw4dq9": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "room-mn9yv4cj-b5bj39": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
+    },
+    "room-mn9yv4wo-4zjvkc": {
+      "lastTicket": null,
+      "history": [],
+      "usedTickets": [],
+      "subtitle": "",
+      "settings": {
+        "mode": "random",
+        "min": 0,
+        "max": 9999
+      }
     }
   }
 }

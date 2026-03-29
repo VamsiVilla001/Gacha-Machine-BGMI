@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=3696, height=1344, initial-scale=1.0, user-scalable=no">
     <title>Giveaway - Gold</title>
     <style>
         @font-face {
@@ -84,16 +84,19 @@
 
         .broadcast-shell {
             position: relative;
+            width: 3696px !important;
+            height: 1344px !important;
             overflow: hidden;
             /* background: #12023c; */
         }
 
         .broadcast-canvas {
             position: relative;
-            width: 3696px;
-            height: 1344px;
+            width: 3696px !important;
+            height: 1344px !important;
             overflow: hidden;
-            transform-origin: top left;
+            transform-origin: top left !important;
+            transform: none !important;
         }
 
         .layer {
@@ -205,6 +208,7 @@
             top: 50%;
             transform: translateY(-50%);
             width: 980px;
+            flex-shrink: 0;
             min-height: 980px;
             z-index: 8;
             display: flex;
@@ -218,11 +222,14 @@
             position: relative;
             inset: auto;
             width: 560px;
-            max-width: 100%;
+            max-width: 560px;
             aspect-ratio: 121 / 147.176;
             height: auto;
             object-fit: contain;
+            object-position: center;
+            flex-shrink: 0;
             z-index: 8;
+            min-width: 560px;
         }
 
         .logo-header .header {
@@ -494,7 +501,7 @@
                 <img class="rail__dots" src="./assets/svg/broadcast-v2-dots-right.svg" alt="">
             </div>
             <div class="logo-header">
-                <img class="layer logo" src="./assets/svg/broadcast-v2-logo.svg" alt="BGIS 2026 logo">
+                <img class="layer logo" src="https://bgmi-lan-assets.s3.ap-south-2.amazonaws.com/BGIS_2026_Logo.png" alt="BGIS 2026 logo">
 
                 <div class="header">
                     <div class="broadcast-title">GIVEAWAY</div>
@@ -686,11 +693,7 @@
                 }
             }
 
-            function resizeFrame() {
-                const scale = Math.min(window.innerWidth / FRAME_WIDTH, window.innerHeight / FRAME_HEIGHT);
-                const width = Math.round(FRAME_WIDTH * scale);
-                const height = Math.round(FRAME_HEIGHT * scale);
-                shellNode.style.width = `${width}px`;
+function resizeFrame() {                // Disabled auto-scaling - using fixed 3696x1344 dimensions                return;            }
                 shellNode.style.height = `${height}px`;
                 canvasNode.style.transform = `scale(${scale})`;
             }
@@ -1343,11 +1346,9 @@
             }
 
             roomIdNode.textContent = broadcastState.roomId;
-            resizeFrame();
             populateStrips();
             setTicketInstant("0000", { source: "bootstrap" });
             setConnectionStatus("connecting");
-            window.addEventListener("resize", resizeFrame);
 
             if (previewTicket) {
                 window.setTimeout(() => {
